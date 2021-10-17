@@ -49,4 +49,6 @@ def get_mask(df, image_id, shape):
     for rle_mask in rle_masks:
         mask += _decode_rle_mask(rle_mask=rle_mask, shape=shape)
 
+    mask[mask >= 1] = 1
+
     return mask
