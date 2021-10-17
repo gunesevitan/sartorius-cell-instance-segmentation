@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def decode_rle_mask(rle_mask, shape):
+def _decode_rle_mask(rle_mask, shape):
 
     """
     Decode run-length encoded segmentation mask string into 2d array
@@ -47,6 +47,6 @@ def get_mask(df, image_id, shape):
     mask = np.zeros((shape[0], shape[1]), dtype=np.uint8)
     rle_masks = df.loc[df['id'] == image_id, 'annotation'].values
     for rle_mask in rle_masks:
-        mask += decode_rle_mask(rle_mask, shape)
+        mask += _decode_rle_mask(rle_mask=rle_mask, shape=shape)
 
     return mask
