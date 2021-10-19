@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.ndimage.morphology import binary_fill_holes
 
 
 def _decode_rle_mask(rle_mask, shape):
@@ -25,7 +26,10 @@ def _decode_rle_mask(rle_mask, shape):
     for start, end in zip(starts, ends):
         mask[start:end] = 1
 
-    return mask.reshape(shape[0], shape[1])
+    mask = mask.reshape(shape[0], shape[1])
+    mask = binary_fill_holes(mask)
+
+    return mask
 
 
 def get_mask(df, image_id, shape):
