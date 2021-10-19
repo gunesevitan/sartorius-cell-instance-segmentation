@@ -31,7 +31,7 @@ def get_stratified_folds(df, n_splits, shuffle=True, random_state=42, verbose=Fa
             df_fold = df_images[df_images['fold'] == fold]
             print(f'Fold {fold} {df_fold.shape}')
 
-    df_images[['id', 'fold']].to_csv(f'{settings.DATA_PATH}/train_folds.csv')
+    df_images[['id', 'fold']].to_csv(f'{settings.DATA_PATH}/train_folds.csv', index=False)
 
 
 if __name__ == '__main__':
