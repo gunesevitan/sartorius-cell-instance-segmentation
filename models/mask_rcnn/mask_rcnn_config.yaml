@@ -1,0 +1,42 @@
+model: MaskRCNNModel
+model_parameters:
+  num_classes: 1
+  fpn: maskrcnn_resnet50_fpn
+  pretrained: False
+  pretrained_backbone: False
+  trainable_backbone_layers: null
+  mask_predictor_hidden_dim: 256
+
+training_parameters:
+  optimizer: Adam
+  optimizer_parameters:
+    lr: 0.001
+    betas:
+      - 0.9
+      - 0.999
+    weight_decay: 0
+  lr_scheduler: CosineAnnealingLR
+  lr_scheduler_parameters:
+    T_max: 50
+    eta_min: 0.00001
+    last_epoch: -1
+    verbose: False
+  data_loader:
+    training_batch_size: 1
+    test_batch_size: 32
+    num_workers: 4
+  epochs: 100
+  early_stopping_patience: 15
+  deterministic_cudnn: False
+  device: cuda
+  random_state: 42
+
+transform_parameters:
+  resize:
+    height: 112
+    width: 112
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  normalize:
+    mean: [0.485, 0.456, 0.406]
+    std: [0.229, 0.224, 0.225]
