@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 import settings
-import rle_utils
+import mask_utils
 
 
-def visualize_image(df, image_id, visualize_mask, path=None):
+def visualize_image(df, image_id, visualize_mask=True, path=None):
 
     """
-    Visualize raw image and segmentation mask
+    Visualize raw image and segmentation masks
 
     Parameters
     ----------
@@ -32,8 +32,9 @@ def visualize_image(df, image_id, visualize_mask, path=None):
 
     fig, ax = plt.subplots(figsize=(16, 16))
     ax.imshow(image, cmap='gray')
+
     if visualize_mask:
-        mask = rle_utils.get_mask(df=df, image_id=image_id, shape=(image.shape[0], image.shape[1]))
+        mask = mask_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=image.shape)
         ax.imshow(mask, alpha=0.4)
 
     ax.set_xlabel('')
@@ -49,7 +50,7 @@ def visualize_image(df, image_id, visualize_mask, path=None):
         plt.close(fig)
 
 
-def visualize_image_and_transforms(df, image_id, transforms=None, path=None):
+def visualize_transforms(df, image_id, transforms=None, path=None):
 
     """
     Visualize raw and transformed image and segmentation mask
@@ -58,24 +59,36 @@ def visualize_image_and_transforms(df, image_id, transforms=None, path=None):
     ----------
     df [pandas.DataFrame of shape (n_annotation, >= 2)]: Training dataframe
     image_id (str): Image ID (filename)
-    transforms (albumentations.Compose): Transformation to apply image and mask
+    transforms (albumentations.Compose): Transformations to apply image, mask and bounding boxes
     path (str or None): Path of the output file (if path is None, plot is displayed with selected backend)
     """
 
     image_path = df.loc[df['id'] == image_id, 'id'].values[0]
-    image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    mask = rle_utils.get_mask(df=df, image_id=image_id, shape=(image.shape[0], image.shape[1]))
+    raw_image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
+    raw_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
+    raw_mask = mask_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=raw_image.shape)
 
-    transformed = transforms(image=image, mask=mask)
+    encoded_masks = df.loc[df['id'] == image_id, 'annotation'].values
+    masks = []
+    boxes = []
+    labels = []
+
+    for encoded_mask in encoded_masks:
+        decoded_mask = mask_utils.decode_rle_mask(rle_mask=encoded_mask, shape=raw_image.shape)
+        bounding_box = mask_utils.get_bounding_box(decoded_mask)
+        masks.append(decoded_mask)
+        boxes.append(bounding_box)
+        labels.append(1)
+
+    transformed = transforms(image=raw_image, masks=masks, bboxes=boxes, labels=labels)
     transformed_image = transformed['image']
-    transformed_mask = transformed['mask']
+    transformed_masks = np.any(np.stack(transformed['masks']), axis=0)
 
     fig, axes = plt.subplots(figsize=(32, 16), ncols=2)
-    axes[0].imshow(image, cmap='gray')
-    axes[0].imshow(mask, alpha=0.4)
+    axes[0].imshow(raw_image, cmap='gray')
+    axes[0].imshow(raw_mask, alpha=0.4)
     axes[1].imshow(transformed_image, cmap='gray')
-    axes[1].imshow(transformed_mask, alpha=0.4)
+    axes[1].imshow(transformed_masks, alpha=0.4)
 
     for i in range(2):
         axes[i].set_xlabel('')
