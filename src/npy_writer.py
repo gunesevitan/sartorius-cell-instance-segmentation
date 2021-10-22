@@ -5,10 +5,10 @@ import numpy as np
 import pandas as pd
 
 import settings
-import rle_utils
+import mask_utils
 
 
-if __name__ == '__main__':
+def write_semantic_segmentation_masks():
 
     print('Processing training set run-length encoded masks')
     df_train = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
@@ -16,8 +16,7 @@ if __name__ == '__main__':
     Path(npy_directory).mkdir(parents=True, exist_ok=True)
 
     for image_id in tqdm(df_train['id'].unique()):
-
-        mask = rle_utils.get_mask(
+        mask = mask_utils.decode_and_add_rle_masks(
             df=df_train,
             image_id=image_id,
             shape=(520, 704)
