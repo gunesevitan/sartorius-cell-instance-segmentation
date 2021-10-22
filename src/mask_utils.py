@@ -29,10 +29,10 @@ def decode_rle_mask(rle_mask, shape):
     return mask
 
 
-def get_mask(df, image_id, shape):
+def decode_and_add_rle_masks(df, image_id, shape):
 
     """
-    Decode all run-length encoded segmentation masks of a given image and merge them into a 2d array
+    Decode all run-length encoded segmentation masks of a given image and add them into a 2d array
 
     Parameters
     ----------
@@ -42,14 +42,40 @@ def get_mask(df, image_id, shape):
 
     Returns
     -------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d all segmentation masks
+    mask [numpy.ndarray of shape (height, width)]: Decoded 2d all instance segmentation masks
     """
 
-    mask = np.zeros((shape[0], shape[1]), dtype=np.uint8)
+    mask = np.zeros(shape, dtype=np.uint8)
     rle_masks = df.loc[df['id'] == image_id, 'annotation'].values
     for rle_mask in rle_masks:
         mask += decode_rle_mask(rle_mask=rle_mask, shape=shape)
 
+    # Assign 1 to overlapping regions
     mask[mask >= 1] = 1
 
     return mask
+
+
+def get_bounding_box(mask):
+
+    """
+    Get bounding box from a single instance segmentation mask
+
+    Parameters
+    ----------
+    mask [numpy.ndarray of shape (height, width)]: Decoded 2d single instance segmentation mask
+
+    Returns
+    -------
+    bounding_box [list of shape (4)]: Bounding box of the instance segmentation mask
+    """
+
+    non_zero_idx = np.where(mask == 1)
+    bounding_box = [
+        np.min(non_zero_idx[1]),
+        np.min(non_zero_idx[0]),
+        np.max(non_zero_idx[1]),
+        np.max(non_zero_idx[0])
+    ]
+
+    return bounding_box
