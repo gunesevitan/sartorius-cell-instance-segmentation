@@ -1,8 +1,7 @@
 import numpy as np
-from scipy.ndimage.morphology import binary_fill_holes
 
 
-def _decode_rle_mask(rle_mask, shape):
+def decode_rle_mask(rle_mask, shape):
 
     """
     Decode run-length encoded segmentation mask string into 2d array
@@ -14,7 +13,7 @@ def _decode_rle_mask(rle_mask, shape):
 
     Returns
     -------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d segmentation mask
+    mask [numpy.ndarray of shape (height, width)]: Decoded 2d single instance segmentation mask
     """
 
     rle_mask = rle_mask.split()
@@ -27,8 +26,6 @@ def _decode_rle_mask(rle_mask, shape):
         mask[start:end] = 1
 
     mask = mask.reshape(shape[0], shape[1])
-    mask = binary_fill_holes(mask)
-
     return mask
 
 
@@ -45,13 +42,13 @@ def get_mask(df, image_id, shape):
 
     Returns
     -------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d segmentation mask
+    mask [numpy.ndarray of shape (height, width)]: Decoded 2d all segmentation masks
     """
 
     mask = np.zeros((shape[0], shape[1]), dtype=np.uint8)
     rle_masks = df.loc[df['id'] == image_id, 'annotation'].values
     for rle_mask in rle_masks:
-        mask += _decode_rle_mask(rle_mask=rle_mask, shape=shape)
+        mask += decode_rle_mask(rle_mask=rle_mask, shape=shape)
 
     mask[mask >= 1] = 1
 
