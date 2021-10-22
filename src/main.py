@@ -3,7 +3,7 @@ import argparse
 import pandas as pd
 
 import settings
-from trainers import SegmentationTrainer
+from trainers import InstanceSegmentationTrainer
 
 
 if __name__ == '__main__':
@@ -14,14 +14,17 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     config = yaml.load(open(f'{settings.MODELS_PATH}/{args.model}/{args.model}_config.yaml', 'r'), Loader=yaml.FullLoader)
-    df_train = pd.read_csv(f'{settings.DATA_PATH}/train_folds.csv')
+    df_train = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
+    df_train = df_train.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
+    df_train_folds = pd.read_csv(f'{settings.DATA_PATH}/train_folds.csv')
+    df_train['fold'] = df_train_folds['fold'].values
     print(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
-    trainer = SegmentationTrainer(
-        model_name=config['model_name'],
-        model_path=config['model_path'],
-        model_parameters=config['model'],
-        training_parameters=config['training']
+    trainer = InstanceSegmentationTrainer(
+        model=config['model'],
+        model_parameters=config['model_parameters'],
+        training_parameters=config['training_parameters'],
+        transform_parameters=config['transform_parameters'],
     )
 
     if args.mode == 'train':

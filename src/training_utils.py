@@ -24,3 +24,7 @@ def set_seed(seed, deterministic_cudnn=False):
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+
+def collate_fn(batch):
+    return tuple(zip(*batch))

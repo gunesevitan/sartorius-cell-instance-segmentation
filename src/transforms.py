@@ -48,7 +48,7 @@ def get_transforms(**kwargs):
     bbox_params = {'format': 'pascal_voc',  'label_fields': ['labels'], 'min_area': 0, 'min_visibility': 0}
 
     train_transforms = A.Compose([
-        A.Resize(height=kwargs['resize_height'], width=kwargs['resize_width'], interpolation=1, always_apply=True),
+        #A.Resize(height=kwargs['resize']['height'], width=kwargs['resize']['width'], interpolation=1, always_apply=True),
         A.HorizontalFlip(p=kwargs['horizontal_flip_probability']),
         A.VerticalFlip(p=kwargs['vertical_flip_probability']),
         Scale(always_apply=True),
@@ -57,7 +57,7 @@ def get_transforms(**kwargs):
     ], bbox_params=A.BboxParams(**bbox_params))
 
     test_transforms = A.Compose([
-        A.Resize(250, 250, interpolation=1, always_apply=True, p=1),
+        #A.Resize(height=kwargs['resize']['height'], width=kwargs['resize']['width'], interpolation=1, always_apply=True, p=1),
         Scale(always_apply=True),
         ToRGB(always_apply=True),
         ToTensorV2(always_apply=True)
