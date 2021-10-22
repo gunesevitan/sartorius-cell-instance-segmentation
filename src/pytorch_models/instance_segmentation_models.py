@@ -66,4 +66,4 @@ class MaskRCNNModel(nn.Module):
                 - masks [torch.FloatTensor of shape (n_detections, n_instance, height, width)]: Predicted logits of instance masks
         """
 
-        return self.model(images, targets)
+        return self.fpn(images, targets)
