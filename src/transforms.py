@@ -61,6 +61,6 @@ def get_transforms(**kwargs):
         Scale(always_apply=True),
         ToRGB(always_apply=True),
         ToTensorV2(always_apply=True)
-    ])
+    ], bbox_params=A.BboxParams(**bbox_params))
 
     return {'train': train_transforms, 'test': test_transforms}
