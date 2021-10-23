@@ -22,6 +22,7 @@ if __name__ == '__main__':
 
     trainer = InstanceSegmentationTrainer(
         model=config['model'],
+        model_path=args.model,
         model_parameters=config['model_parameters'],
         training_parameters=config['training_parameters'],
         transform_parameters=config['transform_parameters'],

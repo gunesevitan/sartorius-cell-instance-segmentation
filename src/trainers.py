@@ -14,9 +14,10 @@ import pytorch_models
 
 class InstanceSegmentationTrainer:
 
-    def __init__(self, model, model_parameters, training_parameters, transform_parameters):
+    def __init__(self, model, model_path, model_parameters, training_parameters, transform_parameters):
 
         self.model = model
+        self.model_path = model_path
         self.model_parameters = model_parameters
         self.training_parameters = training_parameters
         self.transform_parameters = transform_parameters
@@ -199,7 +200,7 @@ class InstanceSegmentationTrainer:
 
                 best_val_loss = np.min(summary['val_loss']) if len(summary['val_loss']) > 0 else np.inf
                 if val_loss < best_val_loss:
-                    model_path = f'{settings.MODELS_PATH}/{self.model}/{self.model}_fold{fold}.pt'
+                    model_path = f'{settings.MODELS_PATH}/{self.model_path}/{self.model_path}_fold{fold}.pt'
                     torch.save(model.state_dict(), model_path)
                     print(f'Saving model to {model_path} (validation loss decreased from {best_val_loss:.6f} to {val_loss:.6f})')
 
@@ -214,6 +215,6 @@ class InstanceSegmentationTrainer:
                         training_losses=summary['train_loss'],
                         validation_losses=summary['val_loss'],
                         title=f'{self.model} - Fold {fold} Learning Curve',
-                        path=f'{settings.MODELS_PATH}/{self.model}/{self.model}_fold{fold}_learning_curve.png'
+                        path=f'{settings.MODELS_PATH}/{self.model_path}/{self.model_path}_fold{fold}_learning_curve.png'
                     )
                     early_stopping = True
