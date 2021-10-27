@@ -2,15 +2,38 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 import seaborn as sns
+import torch
 
 import settings
 import mask_utils
+import inference_utils
+
+
+def _draw_bounding_box(image, bounding_box):
+
+    """
+    Draw given bounding box on the given image
+
+    Parameters
+    ----------
+    image [numpy.ndarray of shape (height, width, depth)]: Image
+    bounding_box [numpy.ndarray of shape (4)]: Single bounding box coordinates in PASCAL VOC format
+    label (str): Label of the single bounding box
+
+    Returns
+    -------
+    image [np.ndarray of shape (height, width, channel)]: Image with bounding box and its label drawn on it
+    """
+
+    x_min, y_min, x_max, y_max = np.uint16(bounding_box)
+    cv2.rectangle(image, (x_min, y_min), (x_max, y_max), color=(255, 0, 0), thickness=2)
+    return image
 
 
 def visualize_image(df, image_id, visualize_mask=True, path=None):
 
     """
-    Visualize raw image and segmentation masks
+    Visualize raw image along with segmentation masks
 
     Parameters
     ----------
@@ -53,7 +76,7 @@ def visualize_image(df, image_id, visualize_mask=True, path=None):
 def visualize_transforms(df, image_id, transforms=None, path=None):
 
     """
-    Visualize raw and transformed image and segmentation mask
+    Visualize raw and transformed image along with segmentation masks
 
     Parameters
     ----------
@@ -98,6 +121,75 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
 
     axes[0].set_title(f'{image_path} Raw Image', size=20, pad=15)
     axes[1].set_title(f'{image_path} Transformed Image', size=20, pad=15)
+
+    if path is None:
+        plt.show()
+    else:
+        plt.savefig(path)
+        plt.close(fig)
+
+
+def visualize_predictions(df, image_id, model, nms_iou_threshold, score_threshold, label_threshold, transforms=None, path=None):
+
+    """
+    Visualize transformed image along with ground-truth and predicted segmentation masks
+
+    Parameters
+    ----------
+    df [pandas.DataFrame of shape (n_annotation, >= 2)]: Training dataframe
+    image_id (str): Image ID (filename)
+    model (torch.nn.Module): Model used for inference
+    nms_iou_threshold (float): Threshold for non-maximum suppression (0 <= nms_iou_threshold <= 1)
+    score_threshold (float): Threshold for confidence scores (0 <= score_threshold <= 1)
+    label_threshold (float): Threshold for converting probabilities to labels (0 <= label_threshold <= 1)
+    transforms (albumentations.Compose): Transformations to apply image, mask and bounding boxes
+    path (str or None): Path of the output file (if path is None, plot is displayed with selected backend)
+    """
+
+    image_path = df.loc[df['id'] == image_id, 'id'].values[0]
+    image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    transformed_image = transforms(image=image)['image']
+
+    ground_truth_masks = []
+    for mask in df.loc[df['id'] == image_id, 'annotation'].values:
+        decoded_mask = mask_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+        ground_truth_masks.append(decoded_mask)
+    ground_truth_masks = np.stack(ground_truth_masks)
+
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+    prediction = inference_utils.predict_single_image(
+        image=transformed_image,
+        model=model,
+        device=device,
+        nms_iou_threshold=nms_iou_threshold,
+        score_threshold=score_threshold,
+        verbose=True
+    )
+    prediction_masks = prediction['masks'].reshape(-1, transformed_image.shape[1], transformed_image.shape[2])
+    prediction_masks = np.uint8(prediction_masks > label_threshold)
+    average_precision = inference_utils.get_average_precision(
+        ground_truth_masks=ground_truth_masks,
+        prediction_masks=prediction_masks,
+        verbose=True
+    )
+    prediction_mask = np.any(prediction_masks == 1, axis=0).astype(np.uint8)
+    ground_truth_mask = np.any(ground_truth_masks == 1, axis=0).astype(np.uint8)
+
+    fig, axes = plt.subplots(figsize=(32, 16), ncols=2)
+    axes[0].imshow(image, cmap='gray')
+    axes[0].imshow(ground_truth_mask, alpha=0.4)
+    axes[1].imshow(image, cmap='gray')
+    axes[1].imshow(prediction_mask, alpha=0.4)
+
+    for i in range(2):
+        axes[i].set_xlabel('')
+        axes[i].set_ylabel('')
+        axes[i].tick_params(axis='x', labelsize=15, pad=10)
+        axes[i].tick_params(axis='y', labelsize=15, pad=10)
+
+    axes[0].set_title(f'{image_path} Ground-truth Segmentation Mask', size=20, pad=15)
+    axes[1].set_title(f'{image_path} Prediction Segmentation Mask AP: {average_precision:.4f}', size=20, pad=15)
 
     if path is None:
         plt.show()
