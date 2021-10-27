@@ -52,13 +52,22 @@ def get_transforms(**kwargs):
         A.VerticalFlip(p=kwargs['vertical_flip_probability']),
         Scale(always_apply=True),
         ToRGB(always_apply=True),
+        #A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
+        ToTensorV2(always_apply=True)
+    ], bbox_params=A.BboxParams(**bbox_params))
+
+    val_transforms = A.Compose([
+        Scale(always_apply=True),
+        ToRGB(always_apply=True),
+        #A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
         ToTensorV2(always_apply=True)
     ], bbox_params=A.BboxParams(**bbox_params))
 
     test_transforms = A.Compose([
         Scale(always_apply=True),
         ToRGB(always_apply=True),
+        #A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
         ToTensorV2(always_apply=True)
-    ], bbox_params=A.BboxParams(**bbox_params))
+    ])
 
-    return {'train': train_transforms, 'test': test_transforms}
+    return {'train': train_transforms, 'val': val_transforms, 'test': test_transforms}

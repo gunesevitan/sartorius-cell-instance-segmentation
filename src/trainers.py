@@ -6,6 +6,7 @@ import torch.optim as optim
 
 import settings
 import training_utils
+import inference_utils
 import visualization
 import transforms
 from datasets import InstanceSegmentationDataset
@@ -14,13 +15,14 @@ import pytorch_models
 
 class InstanceSegmentationTrainer:
 
-    def __init__(self, model, model_path, model_parameters, training_parameters, transform_parameters):
+    def __init__(self, model, model_path, model_parameters, training_parameters, transform_parameters, post_processing_parameters):
 
         self.model = model
         self.model_path = model_path
         self.model_parameters = model_parameters
         self.training_parameters = training_parameters
         self.transform_parameters = transform_parameters
+        self.post_processing_parameters = post_processing_parameters
 
     def train_fn(self, train_loader, model, optimizer, device, scheduler=None):
 
@@ -218,3 +220,57 @@ class InstanceSegmentationTrainer:
                         path=f'{settings.MODELS_PATH}/{self.model_path}/{self.model_path}_fold{fold}_learning_curve.png'
                     )
                     early_stopping = True
+
+    def inference(self, df):
+
+        print(f'\n{"-" * 30}\nRunning {self.model} for Training\n{"-" * 30}\n')
+        instance_segmentation_transforms = transforms.get_transforms(**self.transform_parameters)
+        df[f'{self.model_path}_predictions_average_precision'] = 0
+
+        for fold in sorted(df['fold'].unique()):
+
+            print(f'\nFold {fold}\n{"-" * 6}')
+
+            _, val_idx = df.loc[df['fold'] != fold].index, df.loc[df['fold'] == fold].index
+            val_dataset = InstanceSegmentationDataset(
+                images=df.loc[val_idx, 'id'].values,
+                masks=df.loc[val_idx, 'annotation'].values,
+                transforms=instance_segmentation_transforms['val']
+            )
+
+            training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
+            device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+            model = getattr(pytorch_models, self.model)(**self.model_parameters)
+            model = model.to(device)
+            model_path = f'{settings.MODELS_PATH}/{self.model_path}/{self.model_path}_fold{fold}.pt'
+            model.load_state_dict(torch.load(model_path))
+            model.to(device)
+            model.eval()
+
+            for idx in tqdm(range(len(val_dataset))):
+
+                with torch.no_grad():
+                    image = val_dataset[idx][0]
+                    prediction = inference_utils.predict_single_image(
+                        image=image,
+                        model=model,
+                        device=device,
+                        nms_iou_threshold=self.post_processing_parameters['nms_iou_threshold'],
+                        score_threshold=self.post_processing_parameters['score_threshold'],
+                        verbose=False
+                    )
+                    ground_truth_masks = val_dataset[idx][1]['masks'].numpy()
+                    prediction_masks = prediction['masks'].reshape(-1, image.shape[1], image.shape[2])
+
+                    average_precision = inference_utils.get_average_precision(
+                        ground_truth_masks=ground_truth_masks,
+                        prediction_masks=prediction_masks,
+                        thresholds=self.post_processing_parameters['average_precision_thresholds'],
+                        verbose=False
+                    )
+                    df.loc[val_idx[idx], f'{self.model_path}_predictions_average_precision'] = average_precision
+
+            fold_score = np.mean(df.loc[val_idx, f'{self.model_path}_predictions_average_precision'])
+            print(f'Fold {fold} - mAP: {fold_score:.6f}')
+        oof_score = np.mean(df[f'{self.model_path}_predictions_average_precision'])
+        print(f'{"-" * 30}\nOOF mAP: {oof_score:.6}\n{"-" * 30}')

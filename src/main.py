@@ -26,9 +26,10 @@ if __name__ == '__main__':
         model_parameters=config['model_parameters'],
         training_parameters=config['training_parameters'],
         transform_parameters=config['transform_parameters'],
+        post_processing_parameters=config['post_processing_parameters']
     )
 
     if args.mode == 'train':
         trainer.train_and_validate(df_train)
     elif args.mode == 'inference':
-        pass
+        trainer.inference(df_train)
