@@ -43,7 +43,7 @@ class ToRGB(ImageOnlyTransform):
         return np.moveaxis(image, 0, -1)
 
 
-def get_transforms(**kwargs):
+def get_instance_segmentation_transforms(**kwargs):
 
     bbox_params = {'format': 'pascal_voc',  'label_fields': ['labels'], 'min_area': 0, 'min_visibility': 0}
 
@@ -52,22 +52,53 @@ def get_transforms(**kwargs):
         A.VerticalFlip(p=kwargs['vertical_flip_probability']),
         Scale(always_apply=True),
         ToRGB(always_apply=True),
-        #A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
         ToTensorV2(always_apply=True)
     ], bbox_params=A.BboxParams(**bbox_params))
 
     val_transforms = A.Compose([
         Scale(always_apply=True),
         ToRGB(always_apply=True),
-        #A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
         ToTensorV2(always_apply=True)
     ], bbox_params=A.BboxParams(**bbox_params))
 
     test_transforms = A.Compose([
         Scale(always_apply=True),
         ToRGB(always_apply=True),
-        A.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225), always_apply=True),
         ToTensorV2(always_apply=True)
     ])
 
-    return {'train': train_transforms, 'val': val_transforms, 'test': test_transforms}
+    instance_segmentation_transforms = {'train': train_transforms, 'val': val_transforms, 'test': test_transforms}
+    return instance_segmentation_transforms
+
+
+def get_classification_transforms(**kwargs):
+
+    train_transforms = A.Compose([
+        A.Resize(
+            height=kwargs['resize_height'],
+            width=kwargs['resize_width'],
+            interpolation=1,
+            always_apply=True
+        ),
+        A.HorizontalFlip(p=kwargs['horizontal_flip_probability']),
+        A.VerticalFlip(p=kwargs['vertical_flip_probability']),
+        ToRGB(always_apply=True),
+        A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
+        A.CoarseDropout(max_holes=10, max_height=8, max_width=8, min_holes=4, min_height=None, min_width=None, fill_value=0, mask_fill_value=None, always_apply=False, p=0.5),
+        ToTensorV2(always_apply=True)
+    ])
+
+    val_transforms = A.Compose([
+        A.Resize(
+            height=kwargs['resize_height'],
+            width=kwargs['resize_width'],
+            interpolation=1,
+            always_apply=True
+        ),
+        ToRGB(always_apply=True),
+        A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
+        ToTensorV2(always_apply=True)
+    ])
+
+    classification_transforms = {'train': train_transforms, 'val': val_transforms}
+    return classification_transforms
