@@ -3,9 +3,10 @@ model_parameters:
   num_classes: 1
   fpn: maskrcnn_resnet50_fpn
   pretrained: False
-  pretrained_backbone: False
+  pretrained_backbone: True
   trainable_backbone_layers: null
   mask_predictor_hidden_dim: 256
+  box_detections_per_img: 100
 
 training_parameters:
   optimizer: SGD
@@ -23,7 +24,7 @@ training_parameters:
     training_batch_size: 8
     test_batch_size: 16
     num_workers: 4
-  epochs: 100
+  epochs: 250
   early_stopping_patience: 15
   deterministic_cudnn: False
   device: cuda

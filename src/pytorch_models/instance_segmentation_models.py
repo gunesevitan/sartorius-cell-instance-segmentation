@@ -5,7 +5,7 @@ import torchvision.models.detection
 
 class MaskRCNNModel(nn.Module):
 
-    def __init__(self, num_classes, fpn, pretrained=False, pretrained_backbone=False, trainable_backbone_layers=None, mask_predictor_hidden_dim=256):
+    def __init__(self, num_classes, fpn, pretrained=False, pretrained_backbone=False, trainable_backbone_layers=None, mask_predictor_hidden_dim=256, box_detections_per_img=100):
 
         super(MaskRCNNModel, self).__init__()
 
@@ -13,7 +13,8 @@ class MaskRCNNModel(nn.Module):
         self.fpn = getattr(torchvision.models.detection, fpn)(
             pretrained=pretrained,
             pretrained_backbone=pretrained_backbone,
-            trainable_backbone_layers=trainable_backbone_layers
+            trainable_backbone_layers=trainable_backbone_layers,
+            box_detections_per_img=box_detections_per_img
         )
         box_predictor_in_features = self.fpn.roi_heads.box_predictor.cls_score.in_features
         self.fpn.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
