@@ -157,6 +157,7 @@ class InstanceSegmentationTrainer:
             train_dataset = datasets.InstanceSegmentationDataset(
                 images=df.loc[trn_idx, 'id'].values,
                 masks=df.loc[trn_idx, 'annotation'].values,
+                labels=df.loc[trn_idx, 'label'].values,
                 transforms=instance_segmentation_transforms['train']
             )
             train_loader = DataLoader(
@@ -171,6 +172,7 @@ class InstanceSegmentationTrainer:
             val_dataset = datasets.InstanceSegmentationDataset(
                 images=df.loc[val_idx, 'id'].values,
                 masks=df.loc[val_idx, 'annotation'].values,
+                labels=df.loc[val_idx, 'label'].values,
                 transforms=instance_segmentation_transforms['val']
             )
             val_loader = DataLoader(

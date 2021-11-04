@@ -9,10 +9,11 @@ import mask_utils
 
 class InstanceSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, transforms=None):
+    def __init__(self, images, masks=None, labels=None, transforms=None):
 
         self.images = images
         self.masks = masks
+        self.labels = labels
         self.transforms = transforms
 
     def __len__(self):
@@ -43,7 +44,7 @@ class InstanceSegmentationDataset(Dataset):
         image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-        if self.masks is not None:
+        if (self.masks is not None) and (self.labels is not None):
 
             masks = []
             boxes = []
@@ -54,7 +55,7 @@ class InstanceSegmentationDataset(Dataset):
                 bounding_box = mask_utils.get_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
-                labels.append(1)
+                labels.append(self.labels[idx])
 
             if self.transforms is not None:
                 transformed = self.transforms(image=image, masks=masks, bboxes=boxes, labels=labels)
