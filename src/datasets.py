@@ -64,9 +64,9 @@ class InstanceSegmentationDataset(Dataset):
                 labels = transformed['labels']
 
             image_id = torch.tensor([idx])
-            boxes = torch.as_tensor(boxes, dtype=torch.float32)
-            labels = torch.as_tensor(labels, dtype=torch.int64)
-            masks = torch.as_tensor(masks, dtype=torch.uint8)
+            boxes = torch.as_tensor(np.array(boxes), dtype=torch.float32)
+            labels = torch.as_tensor(np.array(labels), dtype=torch.int64)
+            masks = torch.as_tensor(np.array(masks), dtype=torch.uint8)
             area = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
             iscrowd = torch.zeros((len(masks),), dtype=torch.int64)
 
