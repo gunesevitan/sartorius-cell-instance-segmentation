@@ -29,8 +29,8 @@ training_parameters:
   random_state: 42
 
 transform_parameters:
-  resize_height: 224
-  resize_width: 224
+  resize_height: 320
+  resize_width: 320
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   normalize:
