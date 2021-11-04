@@ -78,7 +78,17 @@ def get_classification_transforms(**kwargs):
         A.VerticalFlip(p=kwargs['vertical_flip_probability']),
         ToRGB(always_apply=True),
         A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
-        A.CoarseDropout(max_holes=10, max_height=8, max_width=8, min_holes=4, min_height=None, min_width=None, fill_value=0, mask_fill_value=None, always_apply=False, p=0.5),
+        A.CoarseDropout(
+            max_holes=kwargs['coarse_dropout']['max_holes'],
+            max_height=kwargs['coarse_dropout']['max_height'],
+            max_width=kwargs['coarse_dropout']['max_width'],
+            min_holes=kwargs['coarse_dropout']['min_holes'],
+            min_height=None,
+            min_width=None,
+            fill_value=0,
+            mask_fill_value=None,
+            p=kwargs['coarse_dropout']['probability']
+        ),
         ToTensorV2(always_apply=True)
     ])
 

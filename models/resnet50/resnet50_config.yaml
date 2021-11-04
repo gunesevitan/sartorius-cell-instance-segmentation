@@ -15,12 +15,12 @@ training_parameters:
   lr_scheduler: ReduceLROnPlateau
   lr_scheduler_parameters:
     factor: 0.2
-    patience: 2
+    patience: 3
     min_lr: 0.00000001
     verbose: True
   data_loader:
     training_batch_size: 32
-    val_batch_size: 128
+    val_batch_size: 64
     num_workers: 4
   epochs: 100
   early_stopping_patience: 15
@@ -29,10 +29,14 @@ training_parameters:
   random_state: 42
 
 transform_parameters:
-  resize_height: 320
-  resize_width: 320
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
+  coarse_dropout:
+    max_holes: 25
+    max_height: 10
+    max_width: 10
+    min_holes: 10
+    probability: 0.5
   normalize:
     mean:
       - 0.5018395185470581
