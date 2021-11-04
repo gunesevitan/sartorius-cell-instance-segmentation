@@ -35,9 +35,11 @@ if __name__ == '__main__':
     else:
 
         df_train = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
+        labels = df_train.groupby('id')['cell_type'].first().map({'cort': 1, 'shsy5y': 2, 'astro': 3}).values
         df_train = df_train.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
         df_train_folds = pd.read_csv(f'{settings.DATA_PATH}/train_folds.csv')
         df_train['fold'] = df_train_folds['fold'].values
+        df_train['label'] = labels
         print(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
         trainer = InstanceSegmentationTrainer(
