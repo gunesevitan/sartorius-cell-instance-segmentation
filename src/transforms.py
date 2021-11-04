@@ -74,12 +74,6 @@ def get_instance_segmentation_transforms(**kwargs):
 def get_classification_transforms(**kwargs):
 
     train_transforms = A.Compose([
-        A.Resize(
-            height=kwargs['resize_height'],
-            width=kwargs['resize_width'],
-            interpolation=1,
-            always_apply=True
-        ),
         A.HorizontalFlip(p=kwargs['horizontal_flip_probability']),
         A.VerticalFlip(p=kwargs['vertical_flip_probability']),
         ToRGB(always_apply=True),
@@ -89,12 +83,6 @@ def get_classification_transforms(**kwargs):
     ])
 
     val_transforms = A.Compose([
-        A.Resize(
-            height=kwargs['resize_height'],
-            width=kwargs['resize_width'],
-            interpolation=1,
-            always_apply=True
-        ),
         ToRGB(always_apply=True),
         A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
         ToTensorV2(always_apply=True)
