@@ -138,6 +138,14 @@ class InstanceSegmentationTrainer:
 
     def train_and_validate(self, df):
 
+        """
+        Train and validate on train_images in a cross-validation loop
+
+        Parameters
+        ----------
+        df [pandas.DataFrame of shape (606, 3)]: Dataframe of filenames and targets
+        """
+
         print(f'\n{"-" * 30}\nRunning {self.model} for Training\n{"-" * 30}\n')
         instance_segmentation_transforms = transforms.get_instance_segmentation_transforms(**self.transform_parameters)
 
@@ -178,6 +186,20 @@ class InstanceSegmentationTrainer:
             training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
             device = torch.device(self.training_parameters['device'])
             model = getattr(pytorch_models, self.model)(**self.model_parameters)
+            # Using in-domain pretrained weights for backbone
+            # Backbone is trained for classification task and reached perfect accuracy
+            if self.model_parameters['in_domain_pretrained_backbone']:
+                pretrained_fpn_state_dict = torch.load(f'{settings.MODELS_PATH}/resnet50/resnet50_perfect_classifier.pt')
+                # Match key names and filter out head weights and biases
+                pretrained_fpn_state_dict = {
+                    f'fpn.backbone.body.{k.replace("backbone.", "")}': v
+                    for k, v in pretrained_fpn_state_dict.items()
+                    if ('num_batches_tracked' not in k) and ('head' not in k)
+                }
+                model_state_dict = model.state_dict()
+                model_state_dict.update(pretrained_fpn_state_dict)
+                model.load_state_dict(model_state_dict)
+
             model = model.to(device)
             optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
             scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])
@@ -202,7 +224,6 @@ class InstanceSegmentationTrainer:
                     val_loss = self.val_fn(val_loader, model, device)
 
                 print(f'Epoch {epoch} - Training Loss: {train_loss:.6f} - Validation Loss: {val_loss:.6f}')
-
                 best_val_loss = np.min(summary['val_loss']) if len(summary['val_loss']) > 0 else np.inf
                 if val_loss < best_val_loss:
                     model_path = f'{settings.MODELS_PATH}/{self.model_path}/{self.model_path}_fold{fold}.pt'
