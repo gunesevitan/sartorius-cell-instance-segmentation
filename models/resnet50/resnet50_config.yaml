@@ -1,0 +1,44 @@
+model: ResNet50Model
+model_parameters:
+  num_classes: 3
+  pretrained: True
+  trainable_backbone: True
+
+training_parameters:
+  optimizer: Adam
+  optimizer_parameters:
+    lr: 0.001
+    betas:
+      - 0.9
+      - 0.999
+    weight_decay: 0
+  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler_parameters:
+    factor: 0.2
+    patience: 2
+    min_lr: 0.00000001
+    verbose: True
+  data_loader:
+    training_batch_size: 32
+    val_batch_size: 128
+    num_workers: 4
+  epochs: 100
+  early_stopping_patience: 15
+  deterministic_cudnn: False
+  device: cuda
+  random_state: 42
+
+transform_parameters:
+  resize_height: 224
+  resize_width: 224
+  horizontal_flip_probability: 0.5
+  vertical_flip_probability: 0.5
+  normalize:
+    mean:
+      - 0.5018395185470581
+      - 0.5018395185470581
+      - 0.5018395185470581
+    std:
+      - 0.04786895215511322
+      - 0.04786895215511322
+      - 0.04786895215511322
