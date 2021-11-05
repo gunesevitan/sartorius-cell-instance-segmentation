@@ -29,7 +29,8 @@ def get_stratified_folds(df, n_splits, shuffle=True, random_state=42, verbose=Fa
         print(f'\nTraining set images are split into {n_splits} stratified folds')
         for fold in range(1, n_splits + 1):
             df_fold = df_images[df_images['fold'] == fold]
-            print(f'Fold {fold} {df_fold.shape}')
+            cell_type_value_counts = df_fold['cell_type'].value_counts().to_dict()
+            print(f'Fold {fold} {df_fold.shape} - {cell_type_value_counts}')
 
     df_images[['id', 'fold']].to_csv(f'{settings.DATA_PATH}/train_folds.csv', index=False)
 
