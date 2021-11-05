@@ -143,7 +143,7 @@ class InstanceSegmentationTrainer:
 
         Parameters
         ----------
-        df [pandas.DataFrame of shape (606, 3)]: Dataframe of filenames and targets
+        df [pandas.DataFrame of shape (606, 3)]: Dataframe of filenames, annotations and labels
         """
 
         print(f'\n{"-" * 30}\nRunning {self.model} for Training\n{"-" * 30}\n')
@@ -249,7 +249,15 @@ class InstanceSegmentationTrainer:
 
     def inference(self, df):
 
-        print(f'\n{"-" * 30}\nRunning {self.model} for Training\n{"-" * 30}\n')
+        """
+        Evaluate on train_images in a cross-validation loop
+
+        Parameters
+        ----------
+        df [pandas.DataFrame of shape (606, 3)]: Dataframe of filenames, annotations and labels
+        """
+
+        print(f'\n{"-" * 30}\nRunning {self.model} for Inference\n{"-" * 30}\n')
         instance_segmentation_transforms = transforms.get_instance_segmentation_transforms(**self.transform_parameters)
         df[f'{self.model_path}_predictions_average_precision'] = 0
 
@@ -261,6 +269,7 @@ class InstanceSegmentationTrainer:
             val_dataset = datasets.InstanceSegmentationDataset(
                 images=df.loc[val_idx, 'id'].values,
                 masks=df.loc[val_idx, 'annotation'].values,
+                labels=df.loc[val_idx, 'label'].values,
                 transforms=instance_segmentation_transforms['val']
             )
 
@@ -275,24 +284,29 @@ class InstanceSegmentationTrainer:
 
             for idx in tqdm(range(len(val_dataset))):
 
+                if self.post_processing_parameters['verbose']:
+                    print(f'Evaluating {val_dataset.images[idx]}\n{"-" * 15}')
+
                 with torch.no_grad():
                     image = val_dataset[idx][0]
                     prediction = inference_utils.predict_single_image(
                         image=image,
                         model=model,
                         device=device,
-                        nms_iou_threshold=self.post_processing_parameters['nms_iou_threshold'],
-                        score_threshold=self.post_processing_parameters['score_threshold'],
-                        verbose=False
+                        nms_iou_thresholds=self.post_processing_parameters['nms_iou_thresholds'],
+                        score_thresholds=self.post_processing_parameters['score_thresholds'],
+                        verbose=self.post_processing_parameters['verbose']
                     )
                     ground_truth_masks = val_dataset[idx][1]['masks'].numpy()
                     prediction_masks = prediction['masks'].reshape(-1, image.shape[1], image.shape[2])
-
+                    # Select label_threshold based on the most predicted label and convert probabilities to labels
+                    most_predicted_label = settings.LABEL_MAPPING[prediction['most_predicted_label']]
+                    prediction_masks = np.uint8(prediction_masks > self.post_processing_parameters['label_thresholds'][most_predicted_label])
                     average_precision = inference_utils.get_average_precision(
                         ground_truth_masks=ground_truth_masks,
                         prediction_masks=prediction_masks,
                         thresholds=self.post_processing_parameters['average_precision_thresholds'],
-                        verbose=False
+                        verbose=self.post_processing_parameters['verbose']
                     )
                     df.loc[val_idx[idx], f'{self.model_path}_predictions_average_precision'] = average_precision
 
