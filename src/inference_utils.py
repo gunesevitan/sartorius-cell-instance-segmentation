@@ -29,6 +29,7 @@ def predict_single_image(image, model, device, nms_iou_thresholds, score_thresho
         - boxes [numpy.ndarray of shape (n_objects, 4)]: Bounding boxes in VOC format
         - labels [numpy.ndarray of shape (n_objects)]: Labels of objects
         - scores [numpy.ndarray of shape (n_objects)]: Confidence scores
+        - most_predicted_label (int): Mode value in predicted labels
     """
 
     with torch.no_grad():
@@ -58,6 +59,7 @@ def predict_single_image(image, model, device, nms_iou_thresholds, score_thresho
         'boxes': boxes[score_thresholded_idx],
         'labels': labels[score_thresholded_idx],
         'scores': scores[score_thresholded_idx],
+        'most_predicted_label': most_predicted_label[0][0]
     }
 
     if verbose:
