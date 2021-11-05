@@ -1,11 +1,13 @@
 import numpy as np
+from scipy.stats import mode
 import torch
 import torchvision
 
+import settings
 import metrics
 
 
-def predict_single_image(image, model, device, nms_iou_threshold, score_threshold, verbose=False):
+def predict_single_image(image, model, device, nms_iou_thresholds, score_thresholds, verbose=False):
 
     """
     Predict given image with given model, filter predicted boxes based on IoU threshold and confidence scores
@@ -15,8 +17,8 @@ def predict_single_image(image, model, device, nms_iou_threshold, score_threshol
     image [torch.FloatTensor of shape (channel, height, width)]: Image
     model (torch.nn.Module): Model used for inference
     device (torch.device): Location of the model and inputs
-    nms_iou_threshold (float): Threshold for non-maximum suppression (0 <= nms_iou_threshold <= 1)
-    score_threshold (float): Threshold for confidence scores (0 <= score_threshold <= 1)
+    nms_iou_threshold (dict): Dictionary of thresholds for non-maximum suppression (0 <= nms_iou_threshold <= 1)
+    score_threshold (dict): Dictionary of thresholds for confidence scores (0 <= score_threshold <= 1)
     verbose (bool): Verbosity flag
 
     Returns
@@ -32,8 +34,14 @@ def predict_single_image(image, model, device, nms_iou_threshold, score_threshol
     with torch.no_grad():
         output = model([image.to(device)])[0]
 
+    # Select nms_iou_threshold and score_threshold based on the most predicted label
+    most_predicted_label = mode(output['labels'].cpu().numpy())
+    nms_iou_threshold = nms_iou_thresholds[settings.LABEL_MAPPING[most_predicted_label[0][0]]]
+    score_threshold = score_thresholds[settings.LABEL_MAPPING[most_predicted_label[0][0]]]
+
     if verbose:
-        print(f'{output["scores"].shape[0]} objects are predicted by the model with {output["scores"].mean():.4f} average confidence score')
+        print(f'{output["scores"].shape[0]} objects are predicted with {output["scores"].mean():.4f} average score')
+        print(f'Mode predicted label is {settings.LABEL_MAPPING[most_predicted_label[0][0]]} ({most_predicted_label[-1][0]}) - nms_iou_threshold: {nms_iou_threshold:.4f} - score_threshold: {score_threshold:.4f}')
 
     nms_thresholded_idx = torchvision.ops.nms(output['boxes'], output['scores'], nms_iou_threshold)
     masks = output['masks'][nms_thresholded_idx].cpu().numpy()
@@ -53,7 +61,7 @@ def predict_single_image(image, model, device, nms_iou_threshold, score_threshol
     }
 
     if verbose:
-        print(f'{np.sum(score_thresholded_idx)} objects are kept after applying {nms_iou_threshold} score threshold with {output["scores"].mean():.4f} average score')
+        print(f'{np.sum(score_thresholded_idx)} objects are kept after applying {score_threshold} score threshold with {output["scores"].mean():.4f} average score')
 
     return output
 
@@ -163,6 +171,6 @@ def get_average_precision(ground_truth_masks, prediction_masks, thresholds=(0.50
 
     average_precision = np.mean(precisions)
     if verbose:
-        print(f'Image Average Precision: {average_precision:.6f}')
+        print(f'Image Average Precision: {average_precision:.6f}\n')
 
     return average_precision
