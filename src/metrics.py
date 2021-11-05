@@ -1,6 +1,8 @@
 import numpy as np
+import numba
 
 
+@numba.jit(nopython=True, parallel=True)
 def intersection_over_union(ground_truth_mask, prediction_mask):
 
     """
