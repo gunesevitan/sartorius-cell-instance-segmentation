@@ -22,9 +22,9 @@ model_parameters:
 training_parameters:
   optimizer: SGD
   optimizer_parameters:
-    lr: 0.001
+    lr: 0.002
     momentum: 0.9
-    weight_decay: 0
+    weight_decay: 0.0001
   lr_scheduler: ReduceLROnPlateau
   lr_scheduler_parameters:
     factor: 0.5
@@ -32,10 +32,10 @@ training_parameters:
     min_lr: 0.00001
     verbose: True
   data_loader:
-    training_batch_size: 8
+    training_batch_size: 4
     test_batch_size: 16
     num_workers: 4
-  epochs: 100
+  epochs: 250
   early_stopping_patience: 15
   deterministic_cudnn: False
   device: cuda
@@ -46,9 +46,18 @@ transform_parameters:
   vertical_flip_probability: 0.5
 
 post_processing_parameters:
-  nms_iou_threshold: 0.5
-  score_threshold: 0.4
-  label_threshold: 0.5
+  nms_iou_threshold:
+    cort: 0.8
+    shsy5y: 0.5
+    astro: 0.5
+  score_threshold:
+    cort: 0.8
+    shsy5y: 0.3
+    astro: 0.3
+  label_threshold:
+    cort: 0.5
+    shsy5y: 0.5
+    astro: 0.5
   average_precision_thresholds:
     - 0.50
     - 0.55
