@@ -47,7 +47,7 @@ transform_parameters:
 
 post_processing_parameters:
   nms_iou_thresholds:
-    cort: 0.8
+    cort: 0.6
     shsy5y: 0.5
     astro: 0.5
   score_thresholds:
@@ -55,7 +55,7 @@ post_processing_parameters:
     shsy5y: 0.3
     astro: 0.3
   label_thresholds:
-    cort: 0.5
+    cort: 0.6
     shsy5y: 0.5
     astro: 0.5
   average_precision_thresholds:

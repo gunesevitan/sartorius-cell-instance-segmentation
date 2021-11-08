@@ -317,9 +317,11 @@ class InstanceSegmentationTrainer:
                     df.loc[val_idx[idx], f'{self.model_path}_predictions_average_precision'] = average_precision
 
             fold_score = np.mean(df.loc[val_idx, f'{self.model_path}_predictions_average_precision'])
-            print(f'Fold {fold} - mAP: {fold_score:.6f}')
+            fold_score_by_cell_types = df.loc[val_idx].groupby('label')[f'{self.model_path}_predictions_average_precision'].mean().to_dict()
+            print(f'Fold {fold} - mAP: {fold_score:.6f} ({fold_score_by_cell_types})')
         oof_score = np.mean(df[f'{self.model_path}_predictions_average_precision'])
-        print(f'{"-" * 30}\nOOF mAP: {oof_score:.6}\n{"-" * 30}')
+        oof_score_by_cell_types = df.groupby('label')[f'{self.model_path}_predictions_average_precision'].mean().to_dict()
+        print(f'{"-" * 30}\nOOF mAP: {oof_score:.6} ({oof_score_by_cell_types})\n{"-" * 30}')
         df.to_csv(f'{settings.PREDICTIONS_PATH}/{self.model_path}_scores.csv', index=False)
 
 
