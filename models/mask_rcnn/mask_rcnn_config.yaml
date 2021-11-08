@@ -69,4 +69,4 @@ post_processing_parameters:
     - 0.85
     - 0.90
     - 0.95
-  verbose: False
+  verbose: True

@@ -5,14 +5,24 @@ import torchvision.models.detection
 
 class MaskRCNNModel(nn.Module):
 
+<<<<<<< HEAD
+    def __init__(self, num_classes, fpn, pretrained=False, pretrained_backbone=False, trainable_backbone_layers=None, mask_predictor_hidden_dim=256, box_detections_per_img=100):
+=======
     def __init__(self, num_classes, fpn, pretrained=False, pretrained_backbone=False, trainable_backbone_layers=None, mask_predictor_hidden_dim=256,
                  min_size=800, max_size=1333, image_mean=(0.485, 0.456, 0.406), image_std=(0.229, 0.224, 0.225), box_detections_per_img=100, **kwargs):
+>>>>>>> 2a5828330f15ae5bc65cdcc3ed40a98c0a017d70
 
         super(MaskRCNNModel, self).__init__()
 
         self.fpn = getattr(torchvision.models.detection, fpn)(
+<<<<<<< HEAD
+            pretrained=pretrained,
+            pretrained_backbone=pretrained_backbone,
+            trainable_backbone_layers=trainable_backbone_layers,
+=======
             pretrained=pretrained, pretrained_backbone=pretrained_backbone, trainable_backbone_layers=trainable_backbone_layers,
             min_size=min_size, max_size=max_size, image_mean=image_mean, image_std=image_std,
+>>>>>>> 2a5828330f15ae5bc65cdcc3ed40a98c0a017d70
             box_detections_per_img=box_detections_per_img
         )
         box_predictor_in_features = self.fpn.roi_heads.box_predictor.cls_score.in_features
