@@ -8,6 +8,7 @@ import torch.optim as optim
 from sklearn.metrics import accuracy_score
 
 import settings
+import annotation_utils
 import training_utils
 import inference_utils
 import visualization
@@ -297,11 +298,16 @@ class InstanceSegmentationTrainer:
                         score_thresholds=self.post_processing_parameters['score_thresholds'],
                         verbose=self.post_processing_parameters['verbose']
                     )
+                    # Reshape and convert binary ground-truth segmentation masks to mult-class segmentation mask
                     ground_truth_masks = val_dataset[idx][1]['masks'].numpy()
+                    ground_truth_masks = annotation_utils.binary_to_multi_class_mask(ground_truth_masks)
                     prediction_masks = prediction['masks'].reshape(-1, image.shape[1], image.shape[2])
                     # Select label_threshold based on the most predicted label and convert probabilities to labels
                     most_predicted_label = settings.LABEL_MAPPING[prediction['most_predicted_label']]
                     prediction_masks = np.uint8(prediction_masks > self.post_processing_parameters['label_thresholds'][most_predicted_label])
+                    # Convert binary prediction segmentation masks to mult-class segmentation mask
+                    prediction_masks = annotation_utils.binary_to_multi_class_mask(prediction_masks)
+
                     average_precision = inference_utils.get_average_precision(
                         ground_truth_masks=ground_truth_masks,
                         prediction_masks=prediction_masks,
@@ -314,6 +320,7 @@ class InstanceSegmentationTrainer:
             print(f'Fold {fold} - mAP: {fold_score:.6f}')
         oof_score = np.mean(df[f'{self.model_path}_predictions_average_precision'])
         print(f'{"-" * 30}\nOOF mAP: {oof_score:.6}\n{"-" * 30}')
+        df.to_csv(f'{settings.PREDICTIONS_PATH}/{self.model_path}_scores.csv', index=False)
 
 
 class ClassificationTrainer:
