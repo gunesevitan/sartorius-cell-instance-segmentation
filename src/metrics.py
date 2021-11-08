@@ -32,8 +32,8 @@ def fast_intersection_over_union(ground_truth_masks, prediction_masks):
 
     Parameters
     ----------
-    ground_truth_masks [numpy.ndarray of shape (height, width)]: Ground-truth segmentation mask
-    prediction_masks [numpy.ndarray of shape (height, width)]: Prediction segmentation mask
+    ground_truth_masks [numpy.ndarray of shape (height, width)]: Multi-class ground-truth segmentation mask
+    prediction_masks [numpy.ndarray of shape (height, width)]: Multi-class prediction segmentation mask
 
     Returns
     -------
