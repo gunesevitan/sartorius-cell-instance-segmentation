@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 import settings
-import mask_utils
+import annotation_utils
 
 
 def write_semantic_segmentation_masks():
@@ -16,7 +16,7 @@ def write_semantic_segmentation_masks():
     Path(npy_directory).mkdir(parents=True, exist_ok=True)
 
     for image_id in tqdm(df_train['id'].unique()):
-        mask = mask_utils.decode_and_add_rle_masks(
+        mask = annotation_utils.decode_and_add_rle_masks(
             df=df_train,
             image_id=image_id,
             shape=(520, 704)

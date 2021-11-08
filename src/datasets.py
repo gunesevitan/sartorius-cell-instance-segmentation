@@ -4,7 +4,7 @@ import torch
 from torch.utils.data import Dataset
 
 import settings
-import mask_utils
+import annotation_utils
 
 
 class InstanceSegmentationDataset(Dataset):
@@ -51,8 +51,8 @@ class InstanceSegmentationDataset(Dataset):
             labels = []
 
             for mask in self.masks[idx]:
-                decoded_mask = mask_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
-                bounding_box = mask_utils.get_bounding_box(decoded_mask)
+                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+                bounding_box = annotation_utils.get_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
                 labels.append(self.labels[idx])
@@ -128,7 +128,7 @@ class SemanticSegmentationDataset(Dataset):
             masks = []
 
             for mask in self.masks[idx]:
-                decoded_mask = mask_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
                 masks.append(decoded_mask)
 
             masks = np.stack(masks)

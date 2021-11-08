@@ -56,6 +56,49 @@ def decode_and_add_rle_masks(df, image_id, shape):
     return mask
 
 
+def encode_rle_mask(binary_mask):
+
+    """
+    Encode 2d binary segmentation mask array into run-length encoded segmentation mask string
+
+    Parameters
+    ----------
+    binary_mask [numpy.ndarray of shape (height, width)]: 2d segmentation mask
+
+    Returns
+    -------
+    rle_mask (str): Run-length encoded segmentation mask string
+    """
+
+    binary_mask = binary_mask.flatten()
+    binary_mask = np.concatenate([[0], binary_mask, [0]])
+    runs = np.where(binary_mask[1:] != binary_mask[:-1])[0] + 1
+    runs[1::2] -= runs[::2]
+    return ' '.join(str(x) for x in runs)
+
+
+def binary_to_multi_class_mask(binary_masks):
+
+    """
+    Encode 3d binary segmentation masks array into 2d multi-class segmentation masks array
+
+    Parameters
+    ----------
+    binary_masks [numpy.ndarray of shape (n_objects, height, width)]: 3d binary segmentation mask
+
+    Returns
+    -------
+    multi_class_mask [numpy.ndarray of shape (height, width)]: 2d multi-class segmentation mask
+    """
+
+    multi_class_mask = np.zeros((binary_masks.shape[1], binary_masks.shape[2]))
+    for i, binary_mask in enumerate(binary_masks):
+        non_zero_idx = binary_mask == 1
+        multi_class_mask[non_zero_idx] = i + 1
+
+    return multi_class_mask
+
+
 def get_bounding_box(mask):
 
     """
