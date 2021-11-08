@@ -5,7 +5,7 @@ import seaborn as sns
 import torch
 
 import settings
-import mask_utils
+import annotation_utils
 import inference_utils
 
 
@@ -57,7 +57,7 @@ def visualize_image(df, image_id, visualize_mask=True, path=None):
     ax.imshow(image, cmap='gray')
 
     if visualize_mask:
-        mask = mask_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=image.shape)
+        mask = annotation_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=image.shape)
         ax.imshow(mask, alpha=0.4)
 
     ax.set_xlabel('')
@@ -89,7 +89,7 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
     image_path = df.loc[df['id'] == image_id, 'id'].values[0]
     raw_image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
     raw_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
-    raw_mask = mask_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=raw_image.shape)
+    raw_mask = annotation_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=raw_image.shape)
 
     encoded_masks = df.loc[df['id'] == image_id, 'annotation'].values
     masks = []
@@ -97,8 +97,8 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
     labels = []
 
     for encoded_mask in encoded_masks:
-        decoded_mask = mask_utils.decode_rle_mask(rle_mask=encoded_mask, shape=raw_image.shape)
-        bounding_box = mask_utils.get_bounding_box(decoded_mask)
+        decoded_mask = annotation_utils.decode_rle_mask(rle_mask=encoded_mask, shape=raw_image.shape)
+        bounding_box = annotation_utils.get_bounding_box(decoded_mask)
         masks.append(decoded_mask)
         boxes.append(bounding_box)
         labels.append(1)
@@ -129,7 +129,7 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
         plt.close(fig)
 
 
-def visualize_predictions(df, image_id, model, nms_iou_threshold, score_threshold, label_threshold, transforms=None, path=None):
+def visualize_predictions(df, image_id, model, nms_iou_thresholds, score_thresholds, label_threshold, transforms=None, path=None):
 
     """
     Visualize transformed image along with ground-truth and predicted segmentation masks
@@ -153,7 +153,7 @@ def visualize_predictions(df, image_id, model, nms_iou_threshold, score_threshol
 
     ground_truth_masks = []
     for mask in df.loc[df['id'] == image_id, 'annotation'].values:
-        decoded_mask = mask_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+        decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
         ground_truth_masks.append(decoded_mask)
     ground_truth_masks = np.stack(ground_truth_masks)
 
@@ -162,8 +162,8 @@ def visualize_predictions(df, image_id, model, nms_iou_threshold, score_threshol
         image=transformed_image,
         model=model,
         device=device,
-        nms_iou_threshold=nms_iou_threshold,
-        score_threshold=score_threshold,
+        nms_iou_thresholds=nms_iou_thresholds,
+        score_thresholds=score_thresholds,
         verbose=True
     )
     prediction_masks = prediction['masks'].reshape(-1, transformed_image.shape[1], transformed_image.shape[2])
