@@ -1,19 +1,21 @@
 import numpy as np
+from scipy import ndimage
 
 
-def decode_rle_mask(rle_mask, shape):
+def decode_rle_mask(rle_mask, shape, fill_holes=False):
 
     """
-    Decode run-length encoded segmentation mask string into 2d array
+    Decode run-length encoded mask string into 2d array
 
     Parameters
     ----------
-    rle_mask (str): Run-length encoded segmentation mask string
+    rle_mask (str): Run-length encoded mask string
     shape (tuple): Height and width of the mask
+    fill_holes (bool): Whether to fill holes in masks or not
 
     Returns
     -------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d single instance segmentation mask
+    mask [numpy.ndarray of shape (height, width)]: Decoded 2d mask
     """
 
     rle_mask = rle_mask.split()
@@ -26,53 +28,28 @@ def decode_rle_mask(rle_mask, shape):
         mask[start:end] = 1
 
     mask = mask.reshape(shape[0], shape[1])
+    if fill_holes:
+        mask = ndimage.binary_fill_holes(mask).astype(np.uint8)
     return mask
 
 
-def decode_and_add_rle_masks(df, image_id, shape):
+def encode_rle_mask(mask):
 
     """
-    Decode all run-length encoded segmentation masks of a given image and add them into a 2d array
+    Encode 2d binary mask array into run-length encoded mask string
 
     Parameters
     ----------
-    df [pandas.DataFrame of shape (n_annotation, >= 2)]: Dataframe with id and annotation columns
-    image_id (str): Image ID (filename)
-    shape (tuple): Height and width of the mask
+    mask [numpy.ndarray of shape (height, width)]: 2d mask
 
     Returns
     -------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d all instance segmentation masks
+    rle_mask (str): Run-length encoded mask string
     """
 
-    mask = np.zeros(shape, dtype=np.uint8)
-    rle_masks = df.loc[df['id'] == image_id, 'annotation'].values
-    for rle_mask in rle_masks:
-        mask += decode_rle_mask(rle_mask=rle_mask, shape=shape)
-
-    # Assign 1 to overlapping regions
-    mask[mask >= 1] = 1
-
-    return mask
-
-
-def encode_rle_mask(binary_mask):
-
-    """
-    Encode 2d binary segmentation mask array into run-length encoded segmentation mask string
-
-    Parameters
-    ----------
-    binary_mask [numpy.ndarray of shape (height, width)]: 2d segmentation mask
-
-    Returns
-    -------
-    rle_mask (str): Run-length encoded segmentation mask string
-    """
-
-    binary_mask = binary_mask.flatten()
-    binary_mask = np.concatenate([[0], binary_mask, [0]])
-    runs = np.where(binary_mask[1:] != binary_mask[:-1])[0] + 1
+    mask = mask.flatten()
+    mask = np.concatenate([[0], mask, [0]])
+    runs = np.where(mask[1:] != mask[:-1])[0] + 1
     runs[1::2] -= runs[::2]
     return ' '.join(str(x) for x in runs)
 
@@ -80,11 +57,11 @@ def encode_rle_mask(binary_mask):
 def binary_to_multi_class_mask(binary_masks):
 
     """
-    Encode 3d binary segmentation masks array into 2d multi-class segmentation masks array
+    Encode multiple 2d binary segmentation masks into a single 2d multi-class segmentation mask
 
     Parameters
     ----------
-    binary_masks [numpy.ndarray of shape (n_objects, height, width)]: 3d binary segmentation mask
+    binary_masks [numpy.ndarray of shape (n_objects, height, width)]: 2d binary segmentation masks
 
     Returns
     -------
@@ -99,14 +76,14 @@ def binary_to_multi_class_mask(binary_masks):
     return multi_class_mask
 
 
-def get_bounding_box(mask):
+def mask_to_bounding_box(mask):
 
     """
-    Get bounding box from a single instance segmentation mask
+    Get bounding box from a segmentation mask
 
     Parameters
     ----------
-    mask [numpy.ndarray of shape (height, width)]: Decoded 2d single instance segmentation mask
+    mask [numpy.ndarray of shape (height, width)]: 2d segmentation mask
 
     Returns
     -------
