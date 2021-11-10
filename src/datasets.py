@@ -52,7 +52,7 @@ class InstanceSegmentationDataset(Dataset):
 
             for mask in self.masks[idx]:
                 decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
-                bounding_box = annotation_utils.get_bounding_box(decoded_mask)
+                bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
                 labels.append(self.labels[idx])
