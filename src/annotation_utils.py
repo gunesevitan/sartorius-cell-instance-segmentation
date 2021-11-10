@@ -29,7 +29,7 @@ def decode_rle_mask(rle_mask, shape, fill_holes=False):
 
     mask = mask.reshape(shape[0], shape[1])
     if fill_holes:
-        mask = ndimage.binary_fill_holes(mask)
+        mask = ndimage.binary_fill_holes(mask).astype(np.uint8)
     return mask
 
 
