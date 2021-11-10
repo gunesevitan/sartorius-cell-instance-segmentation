@@ -43,13 +43,31 @@ class ToRGB(ImageOnlyTransform):
         return np.moveaxis(image, 0, -1)
 
 
-def get_instance_segmentation_transforms(**kwargs):
+def get_instance_segmentation_transforms(**transform_parameters):
+
+    """
+    Get transforms for classification dataset
+
+    Parameters
+    ----------
+    transform_parameters (dict): Dictionary of transform parameters
+
+    Returns
+    -------
+    transforms (dict): Transforms of training and test sets
+    """
 
     bbox_params = {'format': 'pascal_voc',  'label_fields': ['labels'], 'min_area': 0, 'min_visibility': 0}
 
     train_transforms = A.Compose([
-        A.HorizontalFlip(p=kwargs['horizontal_flip_probability']),
-        A.VerticalFlip(p=kwargs['vertical_flip_probability']),
+        A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
+        A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
+        A.RandomBrightnessContrast(
+            brightness_limit=transform_parameters['brightness_limit'],
+            contrast_limit=transform_parameters['contrast_limit'],
+            brightness_by_max=True,
+            p=transform_parameters['brightness_contrast_probability']
+        ),
         Scale(always_apply=True),
         ToRGB(always_apply=True),
         ToTensorV2(always_apply=True)
@@ -71,30 +89,42 @@ def get_instance_segmentation_transforms(**kwargs):
     return instance_segmentation_transforms
 
 
-def get_classification_transforms(**kwargs):
+def get_classification_transforms(**transform_parameters):
+
+    """
+    Get transforms for classification dataset
+
+    Parameters
+    ----------
+    transform_parameters (dict): Dictionary of transform parameters
+
+    Returns
+    -------
+    transforms (dict): Transforms of training and test sets
+    """
 
     train_transforms = A.Compose([
-        A.HorizontalFlip(p=kwargs['horizontal_flip_probability']),
-        A.VerticalFlip(p=kwargs['vertical_flip_probability']),
+        A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
+        A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
         ToRGB(always_apply=True),
-        A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
+        A.Normalize(mean=transform_parameters['normalize']['mean'], std=transform_parameters['normalize']['std'], always_apply=True),
         A.CoarseDropout(
-            max_holes=kwargs['coarse_dropout']['max_holes'],
-            max_height=kwargs['coarse_dropout']['max_height'],
-            max_width=kwargs['coarse_dropout']['max_width'],
-            min_holes=kwargs['coarse_dropout']['min_holes'],
+            max_holes=transform_parameters['coarse_dropout']['max_holes'],
+            max_height=transform_parameters['coarse_dropout']['max_height'],
+            max_width=transform_parameters['coarse_dropout']['max_width'],
+            min_holes=transform_parameters['coarse_dropout']['min_holes'],
             min_height=None,
             min_width=None,
             fill_value=0,
             mask_fill_value=None,
-            p=kwargs['coarse_dropout']['probability']
+            p=transform_parameters['coarse_dropout']['probability']
         ),
         ToTensorV2(always_apply=True)
     ])
 
     val_transforms = A.Compose([
         ToRGB(always_apply=True),
-        A.Normalize(mean=kwargs['normalize']['mean'], std=kwargs['normalize']['std'], always_apply=True),
+        A.Normalize(mean=transform_parameters['normalize']['mean'], std=transform_parameters['normalize']['std'], always_apply=True),
         ToTensorV2(always_apply=True)
     ])
 

@@ -16,7 +16,7 @@ model_parameters:
     - 0.04786895215511322
     - 0.04786895215511322
     - 0.04786895215511322
-  box_detections_per_img: 500
+  box_detections_per_img: 550
   in_domain_pretrained_backbone: True
 
 training_parameters:
@@ -24,11 +24,11 @@ training_parameters:
   optimizer_parameters:
     lr: 0.002
     momentum: 0.9
-    weight_decay: 0.0001
+    weight_decay: 0.00001
   lr_scheduler: ReduceLROnPlateau
   lr_scheduler_parameters:
     factor: 0.5
-    patience: 5
+    patience: 3
     min_lr: 0.00001
     verbose: True
   data_loader:
@@ -44,6 +44,9 @@ training_parameters:
 transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
+  brightness_limit: 0.3
+  contrast_limit: 0.3
+  brightness_contrast_probability: 0.5
 
 post_processing_parameters:
   nms_iou_thresholds:
