@@ -47,7 +47,7 @@ class ToRGB(ImageOnlyTransform):
 def get_instance_segmentation_transforms(**transform_parameters):
 
     """
-    Get transforms for classification dataset
+    Get transforms for instance segmentation dataset
 
     Parameters
     ----------
@@ -71,12 +71,19 @@ def get_instance_segmentation_transforms(**transform_parameters):
             p=transform_parameters['shift_scale_rotate_probability'],
             border_mode=cv2.BORDER_REFLECT
         ),
-        A.RandomBrightnessContrast(
-            brightness_limit=transform_parameters['brightness_limit'],
-            contrast_limit=transform_parameters['contrast_limit'],
-            brightness_by_max=True,
-            p=transform_parameters['brightness_contrast_probability']
-        ),
+        A.OneOf([
+            A.RandomBrightnessContrast(
+                brightness_limit=transform_parameters['brightness_limit'],
+                contrast_limit=transform_parameters['contrast_limit'],
+                brightness_by_max=True,
+                p=transform_parameters['brightness_contrast_probability']
+            ),
+            A.CLAHE(
+                clip_limit=transform_parameters['clip_limit'],
+                tile_grid_size=transform_parameters['tile_grid_size'],
+                p=transform_parameters['clahe_probability']
+            )
+        ], p=transform_parameters['brightness_contrast_probability'] + transform_parameters['clahe_probability']),
         Scale(always_apply=True),
         ToRGB(always_apply=True),
         ToTensorV2(always_apply=True)
