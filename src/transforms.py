@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 import albumentations as A
 from albumentations import ImageOnlyTransform
 from albumentations.pytorch.transforms import ToTensorV2
@@ -63,6 +64,13 @@ def get_instance_segmentation_transforms(**transform_parameters):
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
         A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
+        A.ShiftScaleRotate(
+            shift_limit=transform_parameters['shift_limit'],
+            scale_limit=transform_parameters['scale_limit'],
+            rotate_limit=transform_parameters['rotate_limit'],
+            p=transform_parameters['shift_scale_rotate_probability'],
+            border_mode=cv2.BORDER_REFLECT
+        ),
         A.RandomBrightnessContrast(
             brightness_limit=transform_parameters['brightness_limit'],
             contrast_limit=transform_parameters['contrast_limit'],
