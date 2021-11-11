@@ -45,6 +45,10 @@ transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   random_rotate_90_probability: 0.5
+  shift_limit: 0.0625
+  scale_limit: 0.1
+  rotate_limit: 45
+  shift_scale_rotate_probability: 0.5
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.5
