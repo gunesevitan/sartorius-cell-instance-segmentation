@@ -24,7 +24,7 @@ training_parameters:
   optimizer_parameters:
     lr: 0.002
     momentum: 0.9
-    weight_decay: 0.00001
+    weight_decay: 0
   lr_scheduler: ReduceLROnPlateau
   lr_scheduler_parameters:
     factor: 0.5
@@ -44,8 +44,8 @@ training_parameters:
 transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
-  brightness_limit: 0.3
-  contrast_limit: 0.3
+  brightness_limit: 0.25
+  contrast_limit: 0.25
   brightness_contrast_probability: 0.5
 
 post_processing_parameters:
