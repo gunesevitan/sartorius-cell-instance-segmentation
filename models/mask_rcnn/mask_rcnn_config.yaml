@@ -52,7 +52,7 @@ transform_parameters:
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.5
-  clip_limit: 5.0
+  clip_limit: 1.0
   tile_grid_size:
     - 8
     - 8
