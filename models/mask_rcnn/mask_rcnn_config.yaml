@@ -2,7 +2,7 @@ model: MaskRCNNModel
 model_parameters:
   num_classes: 3
   fpn: maskrcnn_resnet50_fpn
-  pretrained: False
+  pretrained: True
   pretrained_backbone: True
   trainable_backbone_layers: null
   mask_predictor_hidden_dim: 256
@@ -17,19 +17,19 @@ model_parameters:
     - 0.04786895215511322
     - 0.04786895215511322
   box_detections_per_img: 550
-  in_domain_pretrained_backbone: True
+  in_domain_pretrained_backbone: False
 
 training_parameters:
   optimizer: SGD
   optimizer_parameters:
     lr: 0.002
     momentum: 0.9
-    weight_decay: 0.00001
+    weight_decay: 0
   lr_scheduler: ReduceLROnPlateau
   lr_scheduler_parameters:
     factor: 0.5
     patience: 3
-    min_lr: 0.00001
+    min_lr: 0.000001
     verbose: True
   data_loader:
     training_batch_size: 4
@@ -45,26 +45,26 @@ transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
   random_rotate_90_probability: 0.5
-  shift_limit: 0.0625
-  scale_limit: 0.1
-  rotate_limit: 45
-  shift_scale_rotate_probability: 0.5
+  shift_limit: 0.0125
+  scale_limit: 0.05
+  rotate_limit: 0
+  shift_scale_rotate_probability: 0.25
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.5
 
 post_processing_parameters:
   nms_iou_thresholds:
-    cort: 0.6
-    shsy5y: 0.5
-    astro: 0.5
+    cort: 0.7
+    shsy5y: 0.2
+    astro: 0.3
   score_thresholds:
     cort: 0.8
-    shsy5y: 0.3
+    shsy5y: 0.4
     astro: 0.3
   label_thresholds:
-    cort: 0.6
-    shsy5y: 0.5
+    cort: 0.65
+    shsy5y: 0.60
     astro: 0.5
   average_precision_thresholds:
     - 0.50
@@ -77,4 +77,4 @@ post_processing_parameters:
     - 0.85
     - 0.90
     - 0.95
-  verbose: True
+  verbose: False
