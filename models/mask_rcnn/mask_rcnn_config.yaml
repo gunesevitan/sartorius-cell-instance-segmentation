@@ -52,6 +52,11 @@ transform_parameters:
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.5
+  clip_limit: 5.0
+  tile_grid_size:
+    - 8
+    - 8
+  clahe_probability: 0.5
 
 post_processing_parameters:
   nms_iou_thresholds:
