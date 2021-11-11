@@ -62,6 +62,7 @@ def get_instance_segmentation_transforms(**transform_parameters):
     train_transforms = A.Compose([
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
         A.VerticalFlip(p=transform_parameters['vertical_flip_probability']),
+        A.RandomRotate90(p=transform_parameters['random_rotate_90_probability']),
         A.RandomBrightnessContrast(
             brightness_limit=transform_parameters['brightness_limit'],
             contrast_limit=transform_parameters['contrast_limit'],

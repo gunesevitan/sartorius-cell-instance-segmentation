@@ -44,6 +44,7 @@ training_parameters:
 transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
+  random_rotate_90_probability: 0.5
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.5
