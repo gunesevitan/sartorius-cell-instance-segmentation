@@ -47,12 +47,33 @@ def annotate(idx, row, category_ids):
 
 if __name__ == '__main__':
 
-    df = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
+    df_train = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
+    df_train_folds = pd.read_csv(f'{settings.DATA_PATH}/train_folds.csv')
+    df_train = df_train.merge(df_train_folds, on='id', how='left')
+
     category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
     categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
-    images = [{'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'} for image_id, row in df.groupby('id').agg('first').iterrows()]
 
-    annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df.iterrows(), total=len(df)))
-    coco_dataset = {'categories': categories, 'images': images, 'annotations': annotations}
-    with open(f'{settings.DATA_PATH}/coco_annotations.json', 'w', encoding='utf-8') as f:
-        json.dump(coco_dataset, f, ensure_ascii=True, indent=4)
+    for fold in sorted(df_train['fold'].unique()):
+
+        print(f'Writing Fold {fold} COCO Datasets')
+
+        train_images = [
+            {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
+            for image_id, row in
+            df_train.loc[df_train['fold'] != fold].groupby('id').agg('first').iterrows()
+        ]
+        train_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['fold'] != fold].iterrows(), total=len(df_train.loc[df_train['fold'] != fold])))
+        train_dataset = {'categories': categories, 'images': train_images, 'annotations': train_annotations}
+        with open(f'{settings.DATA_PATH}/coco_dataset/train_fold{fold}.json', 'w', encoding='utf-8') as f:
+            json.dump(train_dataset, f, ensure_ascii=True, indent=4)
+
+        val_images = [
+            {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
+            for image_id, row in
+            df_train.loc[df_train['fold'] == fold].groupby('id').agg('first').iterrows()
+        ]
+        val_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['fold'] == fold].iterrows(), total=len(df_train.loc[df_train['fold'] == fold])))
+        val_dataset = {'categories': categories, 'images': val_images, 'annotations': val_annotations}
+        with open(f'{settings.DATA_PATH}/coco_dataset/val_fold{fold}.json', 'w', encoding='utf-8') as f:
+            json.dump(val_dataset, f, ensure_ascii=True, indent=4)
