@@ -25,7 +25,7 @@ def annotate(idx, row, category_ids):
     transforms (dict): Transforms of training and test sets
     """
 
-    decoded_mask = annotation_utils.decode_rle_mask(row['annotation'], shape=(row['width'], row['height']), fill_holes=False)
+    decoded_mask = annotation_utils.decode_rle_mask(row['annotation'], shape=(row['height'], row['width']), fill_holes=False)
     decoded_mask = np.asfortranarray(decoded_mask)
     coco_encoded_mask = pycocotools_mask.encode(decoded_mask)
     coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
