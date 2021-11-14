@@ -9,42 +9,7 @@ from detectron2.engine import DefaultPredictor, DefaultTrainer
 
 import settings
 import metrics
-
-
-class InstanceSegmentationEvaluator(DatasetEvaluator):
-
-    def __init__(self, dataset_name):
-
-        dataset = DatasetCatalog.get(dataset_name)
-        self.annotations_cache = {item['image_id']: item['annotations'] for item in dataset}
-        self.scores = []
-
-    def reset(self):
-        self.scores = []
-
-    def process(self, inputs, outputs):
-
-        print(inputs)
-        print(outputs)
-
-        for input_, output in zip(inputs, outputs):
-            if len(output['instances']) == 0:
-                self.scores.append(0)
-            else:
-                ground_truth_masks = self.annotations_cache[input_['image_id']]
-                prediction_masks = output['instances'].pred_masks.cpu().numpy()
-                average_precision = metrics.get_average_precision_detectron(ground_truth_masks, prediction_masks, verbose=True)
-                self.scores.append(average_precision)
-
-    def evaluate(self):
-        return {'mAP': np.mean(self.scores)}
-
-
-class InstanceSegmentationTrainer(DefaultTrainer):
-
-    @classmethod
-    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
-        return InstanceSegmentationEvaluator(dataset_name)
+import detectron_utils
 
 
 def train_and_validate(model):
@@ -94,7 +59,7 @@ def train_and_validate(model):
         cfg.OUTPUT_DIR = f'{settings.MODELS_PATH}/detectron/'
 
         #return cfg
-        trainer = InstanceSegmentationTrainer(cfg)
+        trainer = detectron_utils.InstanceSegmentationTrainer(cfg)
         trainer.resume_or_load(resume=False)
         trainer.train()
 
@@ -102,10 +67,3 @@ def train_and_validate(model):
 if __name__ == '__main__':
 
     train_and_validate('Detectron')
-
-    import cv2
-    import matplotlib.pyplot as plt
-    from detectron2.utils.visualizer import Visualizer, ColorMode
-    from pycocotools.coco import COCO
-    from pathlib import Path
-    from PIL import Image
