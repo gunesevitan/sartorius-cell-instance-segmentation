@@ -4,7 +4,6 @@ import torch
 import torchvision
 
 import settings
-import metrics
 
 
 def predict_single_image(image, model, device, nms_iou_thresholds, score_thresholds, verbose=False):
@@ -66,36 +65,3 @@ def predict_single_image(image, model, device, nms_iou_thresholds, score_thresho
         print(f'{np.sum(score_thresholded_idx)} objects are kept after applying {score_threshold} score threshold with {output["scores"].mean():.4f} average score')
 
     return output
-
-
-def get_average_precision(ground_truth_masks, prediction_masks, thresholds=(0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95), verbose=False):
-
-    """
-    Predict given image with given model, filter predicted boxes based on IoU threshold and confidence scores
-
-    Parameters
-    ----------
-    ground_truth_masks [numpy.ndarray of shape (height, width)]: Multi-class ground-truth segmentation mask
-    prediction_masks [numpy.ndarray of shape (height, width)]: Multi-class prediction segmentation mask
-    thresholds (tuple): Thresholds on which the hits are calculated
-    verbose (bool): Verbosity flag
-
-    Returns
-    -------
-    average_precision (float): Average precision score of IoU hit matrix (0.0 <= average_precision <= 1.0)
-    """
-
-    ious = metrics.fast_intersection_over_union(ground_truth_masks, prediction_masks)
-
-    precisions = []
-    for threshold in thresholds:
-        tp, fp, fn, precision = metrics.precision_at(ious=ious, threshold=threshold)
-        precisions.append(precision)
-        if verbose:
-            print(f'Precision: {precision:.6f} (TP: {tp} FP: {fp} FN: {fn}) at Threshold: {threshold:.2f}')
-
-    average_precision = np.mean(precisions)
-    if verbose:
-        print(f'Image Average Precision: {average_precision:.6f}\n')
-
-    return average_precision
