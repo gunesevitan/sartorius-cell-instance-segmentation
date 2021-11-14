@@ -32,7 +32,7 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
                 self.scores.append(0)
             else:
                 ground_truth_masks = self.annotations_cache[input_['image_id']]
-                prediction_masks = output['instances']['pred_masks'].cpu().numpy()
+                prediction_masks = output['instances'].pred_masks.cpu().numpy()
                 average_precision = metrics.get_average_precision_detectron(ground_truth_masks, prediction_masks, verbose=True)
                 self.scores.append(average_precision)
 
@@ -78,7 +78,7 @@ def train_and_validate(model):
 
         cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
 
-        cfg.SOLVER.BASE_LR = 0.002
+        cfg.SOLVER.BASE_LR = 0.001
         cfg.SOLVER.MAX_ITER = 1000
         cfg.SOLVER.STEPS = []
         cfg.MODEL.ROI_HEADS.BATCH_SIZE_PER_IMAGE = 128
@@ -88,7 +88,7 @@ def train_and_validate(model):
         cfg.DATASETS.TEST = (f'validation_set_fold{fold}',)
         cfg.DATALOADER.NUM_WORKERS = 4
         cfg.SOLVER.MAX_ITER = len(DatasetCatalog.get(f'training_set_fold{fold}')) // cfg.SOLVER.IMS_PER_BATCH * 100
-        cfg.SOLVER.IMS_PER_BATCH = 1
+        cfg.SOLVER.IMS_PER_BATCH = 4
         cfg.TEST.EVAL_PERIOD = len(DatasetCatalog.get(f'training_set_fold{fold}')) // cfg.SOLVER.IMS_PER_BATCH
         cfg.TEST.DETECTIONS_PER_IMAGE = 550
         cfg.OUTPUT_DIR = f'{settings.MODELS_PATH}/detectron/'
