@@ -9,6 +9,7 @@ from detectron2.engine import DefaultPredictor, DefaultTrainer
 
 import settings
 import metrics
+<<<<<<< HEAD
 
 
 class InstanceSegmentationEvaluator(DatasetEvaluator):
@@ -42,6 +43,9 @@ class InstanceSegmentationTrainer(DefaultTrainer):
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         return InstanceSegmentationEvaluator(dataset_name)
+=======
+import detectron_utils
+>>>>>>> 9eff86a7d07cae3720bd4f98358f3fee89345f9b
 
 
 def train_and_validate(model):
@@ -91,7 +95,7 @@ def train_and_validate(model):
         cfg.OUTPUT_DIR = f'{settings.MODELS_PATH}/detectron/'
 
         #return cfg
-        trainer = InstanceSegmentationTrainer(cfg)
+        trainer = detectron_utils.InstanceSegmentationTrainer(cfg)
         trainer.resume_or_load(resume=False)
         trainer.train()
 
@@ -99,10 +103,3 @@ def train_and_validate(model):
 if __name__ == '__main__':
 
     train_and_validate('Detectron')
-
-    import cv2
-    import matplotlib.pyplot as plt
-    from detectron2.utils.visualizer import Visualizer, ColorMode
-    from pycocotools.coco import COCO
-    from pathlib import Path
-    from PIL import Image
