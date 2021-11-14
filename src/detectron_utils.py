@@ -119,7 +119,3 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             )
         ))
         return hooks
-
-    @classmethod
-    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
-        return InstanceSegmentationEvaluator(dataset_name=dataset_name)
