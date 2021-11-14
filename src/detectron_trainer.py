@@ -94,7 +94,6 @@ def train_and_validate(model):
         cfg.OUTPUT_DIR = f'{settings.MODELS_PATH}/detectron/'
 
         #return cfg
-
         trainer = InstanceSegmentationTrainer(cfg)
         trainer.resume_or_load(resume=False)
         trainer.train()
