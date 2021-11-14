@@ -109,7 +109,7 @@ class EvalLossHook(HookBase):
             eval_losses = self._do_loss_eval()
 
             for eval_loss, loss_value in eval_losses.items():
-                self.trainer.storage.put_scalars(f'val_{eval_loss}', loss_value)
+                self.trainer.storage.put_scalar(f'val_{eval_loss}', loss_value)
 
 
 class InstanceSegmentationEvaluator(DatasetEvaluator):
