@@ -24,14 +24,24 @@ class IoUmAPEvaluator(DatasetEvaluator):
 
     def process(self, inputs, outputs):
 
-        print(inputs)
-        print(outputs)
-
         for input_, output in zip(inputs, outputs):
+
+            print(type(input_))
+            print(type(output))
+            print(len(inputs))
+            print(len(outputs))
+            print(inputs)
+            print(outputs)
+
+
             if len(output['instances']) == 0:
                 self.scores.append(0)
             else:
                 ground_truth_masks = self.annotations_cache[input_['image_id']]
+                prediction_masks = output['instances'].pred_masks.cpu().numpy()
+                print(ground_truth_masks)
+                print(prediction_masks)
+                exit()
                 #score = get_average_precision_detectron()
                 #self.scores.append(score(out, targ))
 
@@ -84,7 +94,7 @@ class DetectronTrainer:
             cfg.DATASETS.TEST = (f'validation_set_fold{fold}',)
             cfg.DATALOADER.NUM_WORKERS = 0
             cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url("COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml")
-            cfg.SOLVER.IMS_PER_BATCH = 1
+            cfg.SOLVER.IMS_PER_BATCH = 4
             cfg.SOLVER.BASE_LR = 0.002
             cfg.SOLVER.MAX_ITER = 1000
             cfg.SOLVER.STEPS = []
