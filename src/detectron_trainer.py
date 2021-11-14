@@ -34,7 +34,7 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
                 self.scores.append(average_precision)
 
     def evaluate(self):
-        return {f'mAP: {np.mean(self.scores):.6f}'}
+        return {'mAP': np.mean(self.scores)}
 
 
 class InstanceSegmentationTrainer(DefaultTrainer):
