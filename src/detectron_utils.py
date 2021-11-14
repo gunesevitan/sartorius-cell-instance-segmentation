@@ -16,13 +16,24 @@ import settings
 import metrics
 
 
-class LossEvalHook(HookBase):
+class EvalLossHook(HookBase):
 
     def __init__(self, eval_period, model, data_loader):
 
         self._model = model
         self._period = eval_period
         self._data_loader = data_loader
+
+    def _get_loss(self, data):
+
+        loss_dict = self._model(data)
+        loss_dict = {
+            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
+            for k, v in loss_dict.items()
+        }
+        total_loss = sum(loss for loss in loss_dict.values())
+        loss_dict['loss_total'] = total_loss
+        return loss_dict
 
     def _do_loss_eval(self):
 
@@ -31,51 +42,74 @@ class LossEvalHook(HookBase):
 
         start_time = time.perf_counter()
         total_compute_time = 0
-        losses = []
+        cls_losses = []
+        box_reg_losses = []
+        mask_losses = []
+        rpn_cls_losses = []
+        rpn_loc_losses = []
+        total_losses = []
+
         for idx, inputs in enumerate(self._data_loader):
+
             if idx == num_warmup:
                 start_time = time.perf_counter()
                 total_compute_time = 0
+
             start_compute_time = time.perf_counter()
+
             if torch.cuda.is_available():
                 torch.cuda.synchronize()
+
             total_compute_time += time.perf_counter() - start_compute_time
             iters_after_start = idx + 1 - num_warmup * int(idx >= num_warmup)
             seconds_per_img = total_compute_time / iters_after_start
+
             if idx >= num_warmup * 2 or seconds_per_img > 5:
+
                 total_seconds_per_img = (time.perf_counter() - start_time) / iters_after_start
                 eta = datetime.timedelta(seconds=int(total_seconds_per_img * (total - idx - 1)))
                 log_every_n_seconds(
                     logging.INFO,
-                    "Loss on Validation  done {}/{}. {:.4f} s / img. ETA={}".format(
-                        idx + 1, total, seconds_per_img, str(eta)
-                    ),
-                    n=5,
+                    f'Loss on Validation  done {idx + 1}/{total}. {seconds_per_img:.4f} s / img. ETA={eta}',
+                    n=5
                 )
-            loss_batch = self._get_loss(inputs)
-            losses.append(loss_batch)
-        mean_loss = np.mean(losses)
-        self.trainer.storage.put_scalar('validation_loss', mean_loss)
+
+            loss_dict = self._get_loss(inputs)
+            cls_losses.append(loss_dict['loss_cls'])
+            box_reg_losses.append(loss_dict['loss_box_reg'])
+            mask_losses.append(loss_dict['loss_mask'])
+            rpn_cls_losses.append(loss_dict['loss_rpn_cls'])
+            rpn_loc_losses.append(loss_dict['loss_rpn_loc'])
+            total_losses.append(loss_dict['loss_total'])
+
+        cls_loss = np.mean(cls_losses)
+        box_reg_loss = np.mean(box_reg_losses)
+        mask_loss = np.mean(mask_losses)
+        rpn_cls_loss = np.mean(rpn_cls_losses)
+        rpn_loc_loss = np.mean(rpn_loc_losses)
+        total_loss = np.mean(total_losses)
         comm.synchronize()
 
-        return losses
-
-    def _get_loss(self, data):
-        # How loss is calculated on train_loop
-        metrics_dict = self._model(data)
-        metrics_dict = {
-            k: v.detach().cpu().item() if isinstance(v, torch.Tensor) else float(v)
-            for k, v in metrics_dict.items()
+        eval_losses = {
+            'cls_loss': cls_loss,
+            'box_reg_loss': box_reg_loss,
+            'mask_loss': mask_loss,
+            'rpn_cls_loss': rpn_cls_loss,
+            'rpn_loc_loss': rpn_loc_loss,
+            'total_loss': total_loss
         }
-        total_losses_reduced = sum(loss for loss in metrics_dict.values())
-        return total_losses_reduced
+
+        return eval_losses
 
     def after_step(self):
+
         next_iter = self.trainer.iter + 1
         is_final = next_iter == self.trainer.max_iter
         if is_final or (self._period > 0 and next_iter % self._period == 0):
-            self._do_loss_eval()
-        self.trainer.storage.put_scalars(timetest=12)
+            eval_losses = self._do_loss_eval()
+
+            for eval_loss, loss_value in eval_losses.items():
+                self.trainer.storage.put_scalars(f'val_{eval_loss}', loss_value)
 
 
 class InstanceSegmentationEvaluator(DatasetEvaluator):
@@ -109,7 +143,7 @@ class InstanceSegmentationTrainer(DefaultTrainer):
     def build_hooks(self):
 
         hooks = super().build_hooks()
-        hooks.insert(-1, LossEvalHook(
+        hooks.insert(-1, EvalLossHook(
             self.cfg.TEST.EVAL_PERIOD,
             self.model,
             build_detection_test_loader(
