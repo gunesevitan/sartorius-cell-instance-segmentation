@@ -8,6 +8,7 @@ from detectron2.evaluation import inference_context
 from detectron2.data import MetadataCatalog, DatasetCatalog
 from detectron2.engine import DefaultPredictor, DefaultTrainer
 from detectron2.evaluation.evaluator import DatasetEvaluator
+from detectron2.evaluation import COCOEvaluator
 from detectron2.utils.logger import log_every_n_seconds
 from detectron2.data import DatasetMapper, build_detection_test_loader
 import detectron2.utils.comm as comm
@@ -109,7 +110,7 @@ class EvalLossHook(HookBase):
             eval_losses = self._do_loss_eval()
 
             for eval_loss, loss_value in eval_losses.items():
-                self.trainer.storage.put_scalars(f'val_{eval_loss}', loss_value)
+                self.trainer.storage.put_scalar(f'val_{eval_loss}', loss_value)
 
 
 class InstanceSegmentationEvaluator(DatasetEvaluator):
@@ -153,3 +154,9 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             )
         ))
         return hooks
+
+    @classmethod
+    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
+        if output_folder is None:
+            output_folder = f'{cfg.OUTPUT_DIR}/evaluation'
+        return COCOEvaluator(dataset_name=dataset_name, tasks=('segm',), distributed=False, output_dir=output_folder, max_dets_per_image=100)
