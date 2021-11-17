@@ -30,7 +30,7 @@ def _draw_bounding_box(image, bounding_box):
     return image
 
 
-def visualize_image(df, image_id, visualize_mask=True, path=None):
+def visualize_image(df, image_id, visualize_mask=True, fill_holes=False, path=None):
 
     """
     Visualize raw image along with segmentation masks
@@ -57,7 +57,13 @@ def visualize_image(df, image_id, visualize_mask=True, path=None):
     ax.imshow(image, cmap='gray')
 
     if visualize_mask:
-        mask = annotation_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=image.shape)
+
+        masks = []
+        for mask in df.loc[df['id'] == image_id, 'annotation'].values:
+            decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=fill_holes)
+            masks.append(decoded_mask)
+        masks = np.stack(masks)
+        mask = np.any(masks > 0, axis=0)
         ax.imshow(mask, alpha=0.4)
 
     ax.set_xlabel('')
@@ -73,7 +79,7 @@ def visualize_image(df, image_id, visualize_mask=True, path=None):
         plt.close(fig)
 
 
-def visualize_transforms(df, image_id, transforms=None, path=None):
+def visualize_transforms(df, image_id, transforms, visualize_mask=True, fill_holes=False, path=None):
 
     """
     Visualize raw and transformed image along with segmentation masks
@@ -89,7 +95,12 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
     image_path = df.loc[df['id'] == image_id, 'id'].values[0]
     raw_image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
     raw_image = cv2.cvtColor(raw_image, cv2.COLOR_BGR2GRAY)
-    raw_mask = annotation_utils.decode_and_add_rle_masks(df=df, image_id=image_id, shape=raw_image.shape)
+    masks = []
+    for mask in df.loc[df['id'] == image_id, 'annotation'].values:
+        decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=raw_image.shape, fill_holes=fill_holes)
+        masks.append(decoded_mask)
+    masks = np.stack(masks)
+    raw_mask = np.any(masks > 0, axis=0)
 
     encoded_masks = df.loc[df['id'] == image_id, 'annotation'].values
     masks = []
@@ -98,20 +109,21 @@ def visualize_transforms(df, image_id, transforms=None, path=None):
 
     for encoded_mask in encoded_masks:
         decoded_mask = annotation_utils.decode_rle_mask(rle_mask=encoded_mask, shape=raw_image.shape)
-        bounding_box = annotation_utils.get_bounding_box(decoded_mask)
+        bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
         masks.append(decoded_mask)
         boxes.append(bounding_box)
         labels.append(1)
 
     transformed = transforms(image=raw_image, masks=masks, bboxes=boxes, labels=labels)
     transformed_image = transformed['image']
-    transformed_masks = np.any(np.stack(transformed['masks']), axis=0)
+    transformed_masks = np.any(np.stack(transformed['masks']) > 0, axis=0)
 
     fig, axes = plt.subplots(figsize=(32, 16), ncols=2)
     axes[0].imshow(raw_image, cmap='gray')
-    axes[0].imshow(raw_mask, alpha=0.4)
     axes[1].imshow(transformed_image, cmap='gray')
-    axes[1].imshow(transformed_masks, alpha=0.4)
+    if visualize_mask:
+        axes[0].imshow(raw_mask, alpha=0.4)
+        axes[1].imshow(transformed_masks, alpha=0.4)
 
     for i in range(2):
         axes[i].set_xlabel('')
@@ -236,3 +248,37 @@ def visualize_learning_curve(training_losses, validation_losses, title, path=Non
     else:
         plt.savefig(path)
         plt.close(fig)
+
+
+
+if __name__ == '__main__':
+
+    import pandas as pd
+    import transforms
+
+    t = transforms.get_instance_segmentation_transforms(**{
+        'horizontal_flip_probability': 0.,
+        'vertical_flip_probability': 0.,
+        'random_rotate_90_probability': 0,
+        'shift_limit': 0.0625,
+        'scale_limit': 0.1,
+        'rotate_limit': 45,
+        'shift_scale_rotate_probability': 0.0,
+        'brightness_limit': 0.2,
+        'contrast_limit': 0,
+        'brightness_contrast_probability': 0.0,
+    })['train']
+    df = pd.read_csv('../data/train.csv')
+
+    image_id = '0030fd0e6378'
+    visualize_transforms(
+        df=df,
+        image_id=image_id,
+        visualize_mask=True,
+        fill_holes=False,
+        transforms=t,
+        path=None
+    )
+
+
+
