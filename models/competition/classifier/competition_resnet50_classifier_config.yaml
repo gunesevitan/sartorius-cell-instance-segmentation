@@ -1,8 +1,7 @@
 main:
-  dataset: competition # livecell or competition
-  task: classification # classification or instance_segmentation
-  validation_type: null # stratified_fold or non_noisy_split
-  fill_holes: null
+  dataset: competition
+  task: classification
+  fill_holes: False
 
 model_parameters:
   model_name: competition_resnet50_classifier
