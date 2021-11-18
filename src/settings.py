@@ -25,7 +25,7 @@ LIVECELL_LABEL_DECODER = {
     8: 'shsy5y'
 }
 
-LIVECELL_LABEL_ENDECODER = {
+LIVECELL_LABEL_ENCODER = {
     'bt474': 1,
     'a172': 2,
     'mcf7': 3,
