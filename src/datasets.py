@@ -57,12 +57,14 @@ class InstanceSegmentationDataset(Dataset):
             boxes = []
             labels = []
 
-            for mask in self.masks[idx]:
+            for mask_idx, mask in enumerate(self.masks[idx]):
                 decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=False, is_coco_encoded=(self.dataset == 'livecell'))
                 bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
                 labels.append(self.labels[idx])
+                if mask_idx > 550:
+                    break
 
             if self.transforms is not None:
                 transformed = self.transforms(image=image, masks=masks, bboxes=boxes, labels=labels)
