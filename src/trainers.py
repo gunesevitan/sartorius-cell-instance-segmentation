@@ -624,7 +624,8 @@ class LIVECellInstanceSegmentationTrainer:
             images=df.loc[trn_idx, 'id'].values,
             masks=df.loc[trn_idx, 'annotation'].values,
             labels=df.loc[trn_idx, 'label'].values,
-            transforms=instance_segmentation_transforms['train']
+            transforms=instance_segmentation_transforms['train'],
+            dataset='livecell'
         )
         train_loader = DataLoader(
             train_dataset,
@@ -640,7 +641,8 @@ class LIVECellInstanceSegmentationTrainer:
                 images=df.loc[val_idx, 'id'].values,
                 masks=df.loc[val_idx, 'annotation'].values,
                 labels=df.loc[val_idx, 'label'].values,
-                transforms=instance_segmentation_transforms['val']
+                transforms=instance_segmentation_transforms['val'],
+                dataset='livecell'
             )
             val_loader = DataLoader(
                 val_dataset,
