@@ -9,7 +9,7 @@ import annotation_utils
 
 class InstanceSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, labels=None, transforms=None, dataset='raw'):
+    def __init__(self, images, masks=None, labels=None, transforms=None, dataset='competition'):
 
         self.images = images
         self.masks = masks
@@ -42,7 +42,7 @@ class InstanceSegmentationDataset(Dataset):
             - iscrowd [torch.UInt8Tensor of shape (n_objects)]: Instances with iscrowd=True will be ignored during evaluation
         """
 
-        if self.dataset == 'raw':
+        if self.dataset == 'competition':
             image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
         elif self.dataset == 'livecell':
             image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
@@ -103,7 +103,7 @@ class InstanceSegmentationDataset(Dataset):
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, transforms=None, dataset='raw'):
+    def __init__(self, images, masks=None, transforms=None, dataset='competition'):
 
         self.images = images
         self.masks = masks
@@ -128,7 +128,7 @@ class SemanticSegmentationDataset(Dataset):
         mask [torch.FloatTensor of shape (channel, height, width)]: Semantic segmentation mask
         """
 
-        if self.dataset == 'raw':
+        if self.dataset == 'competition':
             image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
         elif self.dataset == 'livecell':
             image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
