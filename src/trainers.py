@@ -701,7 +701,10 @@ class LIVECellInstanceSegmentationTrainer:
                     print(f'Best validation loss is {np.min(summary["val_loss"]):.6f}')
                     early_stopping = True
             else:
+                model_path = f'{self.model_parameters["model_path"]}/{self.model_parameters["model_name"]}.pt'
+                torch.save(model.state_dict(), model_path)
                 summary['train_loss'].append(train_loss)
+                print(f'Saving model to {model_path}')
                 print(f'Epoch {epoch} - Training Loss: {train_loss:.6f}')
 
         visualization.visualize_learning_curve(
