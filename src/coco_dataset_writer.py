@@ -3,7 +3,7 @@ from tqdm import tqdm
 from joblib import Parallel, delayed
 import numpy as np
 import pandas as pd
-import pycocotools.mask as pycocotools_mask
+import pycocotools.mask as mask_utils
 
 import settings
 import annotation_utils
@@ -30,10 +30,10 @@ def annotate(idx, row, category_ids, fill_holes=False):
 
     decoded_mask = annotation_utils.decode_rle_mask(row[annotation_column], shape=(row['height'], row['width']), fill_holes=False)
     decoded_mask = np.asfortranarray(decoded_mask)
-    coco_encoded_mask = pycocotools_mask.encode(decoded_mask)
+    coco_encoded_mask = mask_utils.encode(decoded_mask)
     coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
-    area = pycocotools_mask.area(coco_encoded_mask).item()
-    bbox = pycocotools_mask.toBbox(coco_encoded_mask).astype(int).tolist()
+    area = mask_utils.area(coco_encoded_mask).item()
+    bbox = mask_utils.toBbox(coco_encoded_mask).astype(int).tolist()
 
     annotation = {
         'segmentation': coco_encoded_mask,
