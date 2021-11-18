@@ -7,3 +7,14 @@ LABEL_MAPPING = {
     2: 'shsy5y',
     3: 'astro'
 }
+
+LIVECELL_LABEL_MAPPING = {
+    1: 'bt474',
+    2: 'a172',
+    3: 'mcf7',
+    4: 'bv2',
+    5: 'huh7',
+    6: 'skbr3',
+    7: 'skov3',
+    8: 'shsy5y'
+}
