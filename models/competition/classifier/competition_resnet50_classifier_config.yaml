@@ -4,11 +4,14 @@ main:
   validation_type: null # stratified_fold or non_noisy_split
   fill_holes: null
 
-model: ResNet50Model
 model_parameters:
-  num_classes: 3
-  pretrained: True
-  trainable_backbone: True
+  model_name: competition_resnet50_classifier
+  model_path: ../models/competition/classifier
+  model_class: ResNet50Model
+  model_class_parameters:
+    num_classes: 3
+    pretrained: True
+    trainable_backbone: True
 
 training_parameters:
   optimizer: Adam
