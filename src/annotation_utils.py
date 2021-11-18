@@ -1,35 +1,44 @@
 import numpy as np
 from scipy import ndimage
+import pycocotools.mask as mask_utils
 
 
-def decode_rle_mask(rle_mask, shape, fill_holes=False):
+def decode_rle_mask(rle_mask, shape, fill_holes=False, is_coco_encoded=False):
 
     """
-    Decode run-length encoded mask string into 2d array
+    Decode run-length encoded mask string into 2d binary mask array
 
     Parameters
     ----------
     rle_mask (str): Run-length encoded mask string
     shape (tuple): Height and width of the mask
     fill_holes (bool): Whether to fill holes in masks or not
+    is_coco_encoded (bool): Whether the mask is encoded with pycocotools or not
 
     Returns
     -------
     mask [numpy.ndarray of shape (height, width)]: Decoded 2d mask
     """
 
-    rle_mask = rle_mask.split()
-    starts, lengths = [np.asarray(x, dtype=int) for x in (rle_mask[0:][::2], rle_mask[1:][::2])]
-    starts -= 1
-    ends = starts + lengths
+    if is_coco_encoded:
+        # Decoding RLE encoded mask of string
+        mask = np.uint8(mask_utils.decode({'size': shape, 'counts': rle_mask}))
+    else:
+        # Decoding RLE encoded mask of integers
+        rle_mask = rle_mask.split()
+        starts, lengths = [np.asarray(x, dtype=int) for x in (rle_mask[0:][::2], rle_mask[1:][::2])]
+        starts -= 1
+        ends = starts + lengths
 
-    mask = np.zeros((shape[0] * shape[1]), dtype=np.uint8)
-    for start, end in zip(starts, ends):
-        mask[start:end] = 1
+        mask = np.zeros((shape[0] * shape[1]), dtype=np.uint8)
+        for start, end in zip(starts, ends):
+            mask[start:end] = 1
 
-    mask = mask.reshape(shape[0], shape[1])
+        mask = mask.reshape(shape[0], shape[1])
+
     if fill_holes:
         mask = ndimage.binary_fill_holes(mask).astype(np.uint8)
+
     return mask
 
 
@@ -57,15 +66,15 @@ def encode_rle_mask(mask):
 def binary_to_multi_class_mask(binary_masks):
 
     """
-    Encode multiple 2d binary segmentation masks into a single 2d multi-class segmentation mask
+    Encode multiple 2d binary masks into a single 2d multi-class segmentation mask
 
     Parameters
     ----------
-    binary_masks [numpy.ndarray of shape (n_objects, height, width)]: 2d binary segmentation masks
+    binary_masks [numpy.ndarray of shape (n_objects, height, width)]: 2d binary masks
 
     Returns
     -------
-    multi_class_mask [numpy.ndarray of shape (height, width)]: 2d multi-class segmentation mask
+    multi_class_mask [numpy.ndarray of shape (height, width)]: 2d multi-class mask
     """
 
     multi_class_mask = np.zeros((binary_masks.shape[1], binary_masks.shape[2]))
@@ -79,15 +88,15 @@ def binary_to_multi_class_mask(binary_masks):
 def mask_to_bounding_box(mask):
 
     """
-    Get bounding box from a segmentation mask
+    Get bounding box from a binary mask
 
     Parameters
     ----------
-    mask [numpy.ndarray of shape (height, width)]: 2d segmentation mask
+    mask [numpy.ndarray of shape (height, width)]: 2d binary mask
 
     Returns
     -------
-    bounding_box [list of shape (4)]: Bounding box of the instance segmentation mask
+    bounding_box [list of shape (4)]: Bounding box of the object
     """
 
     non_zero_idx = np.where(mask == 1)

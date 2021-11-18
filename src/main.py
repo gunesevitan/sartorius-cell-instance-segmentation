@@ -1,57 +1,94 @@
 import yaml
 import argparse
+import numpy as np
 import pandas as pd
 
 import settings
-from trainers import ClassificationTrainer, InstanceSegmentationTrainer
+import trainers
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('model', type=str)
+    parser.add_argument('config_path', type=str)
     parser.add_argument('mode', type=str)
     args = parser.parse_args()
 
-    config = yaml.load(open(f'{settings.MODELS_PATH}/{args.model}/{args.model}_config.yaml', 'r'), Loader=yaml.FullLoader)
+    config = yaml.load(open(args.config_path, 'r'), Loader=yaml.FullLoader)
 
-    if args.model == 'resnet50':
+    if config['main']['dataset'] == 'competition':
 
-        df_train = pd.read_csv(f'{settings.DATA_PATH}/train_and_semi_supervised.csv')
-        df_train['fold'] = 'train'
-        df_train.loc[df_train['annotation'].isnull(), 'fold'] = 'val'
-        df_train = df_train.groupby('id').first().reset_index()[['id', 'cell_type_target', 'fold']]
-        df_train = pd.concat([df_train, pd.get_dummies(df_train['cell_type_target'], prefix='cell_type_target')], axis=1)
-        print(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
+        df = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
 
-        trainer = ClassificationTrainer(
-            model=config['model'],
-            model_path=args.model,
-            model_parameters=config['model_parameters'],
-            training_parameters=config['training_parameters'],
-            transform_parameters=config['transform_parameters']
-        )
+        if config['main']['task'] == 'classification':
 
-    else:
+            # Training a classifier model for predicting cell type
+            # Classifier model is trained on train images and validated on train_semi_supervised images
+            df['fold'] = 'train'
+            df.loc[df['annotation'].isnull(), 'fold'] = 'val'
+            df = df.groupby('id').first().reset_index()[['id', 'cell_type_target', 'fold']]
+            df = pd.concat([df, pd.get_dummies(df['cell_type_target'], prefix='cell_type_target')], axis=1)
+            print(f'Dataset Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
 
-        df_train = pd.read_csv(f'{settings.DATA_PATH}/train.csv')
-        labels = df_train.groupby('id')['cell_type'].first().map({'cort': 1, 'shsy5y': 2, 'astro': 3}).values
-        df_train = df_train.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
-        df_train_folds = pd.read_csv(f'{settings.DATA_PATH}/train_folds.csv')
-        df_train['fold'] = df_train_folds['fold'].values
-        df_train['label'] = labels
-        print(f'Training Set Shape: {df_train.shape} - Memory Usage: {df_train.memory_usage().sum() / 1024 ** 2:.2f} MB')
+            trainer = trainers.CompetitionClassificationTrainer(
+                model_parameters=config['model_parameters'],
+                training_parameters=config['training_parameters'],
+                transform_parameters=config['transform_parameters']
+            )
 
-        trainer = InstanceSegmentationTrainer(
-            model=config['model'],
-            model_path=args.model,
-            model_parameters=config['model_parameters'],
-            training_parameters=config['training_parameters'],
-            transform_parameters=config['transform_parameters'],
-            post_processing_parameters=config['post_processing_parameters']
-        )
+        elif config['main']['task'] == 'instance_segmentation':
+
+            # Training an instance segmentation model for predicting segmentation masks
+            df = df.loc[~df['annotation'].isnull()]
+            labels = df.groupby('id')['cell_type'].first().map(settings.COMPETITION_LABEL_ENCODER).values
+
+            # Instance segmentation model can be trained and validated in two ways:
+            # 1. Cross-validation loop with stratified folds (samples are stratified on cell_type)
+            # 2. Train on noisy/non-noisy samples and validate on non-noisy samples
+            if config['training_parameters']['validation_type'] == 'stratified_fold':
+                folds = df.groupby('id')['stratified_fold'].first().values
+            else:
+                folds = df.groupby('id')['non_noisy_split'].first().values
+
+            # Pre-computed filled masks can be selected as annotations
+            if config['training_parameters']['fill_holes']:
+                annotation_column = 'annotation_filled'
+            else:
+                annotation_column = 'annotation'
+
+            df = df.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
+            df['label'] = labels
+            df['fold'] = np.uint8(folds)
+            print(f'Training Set Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+            trainer = trainers.CompetitionInstanceSegmentationTrainer(
+                model_parameters=config['model_parameters'],
+                training_parameters=config['training_parameters'],
+                transform_parameters=config['transform_parameters'],
+                post_processing_parameters=config['post_processing_parameters']
+            )
+
+    elif config['main']['dataset'] == 'livecell':
+
+        df = pd.read_csv(f'{settings.DATA_PATH}/livecell.csv')
+
+        if config['main']['task'] == 'instance_segmentation':
+
+            labels = df.groupby('id')['cell_type'].first().map(settings.LIVECELL_LABEL_ENCODER).values
+            folds = df.groupby('id')['dataset'].first().isin(config['training_parameters']['training_set']).values
+            df = df.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
+            df['label'] = labels
+            df['fold'] = np.uint8(~folds)
+            print(f'Dataset Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+            trainer = trainers.LIVECellInstanceSegmentationTrainer(
+                model_parameters=config['model_parameters'],
+                training_parameters=config['training_parameters'],
+                transform_parameters=config['transform_parameters'],
+                post_processing_parameters=config['post_processing_parameters']
+            )
 
     if args.mode == 'train':
-        trainer.train_and_validate(df_train)
+        trainer.train_and_validate(df)
     elif args.mode == 'inference':
-        trainer.inference(df_train)
+        trainer.inference(df)

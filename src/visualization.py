@@ -30,7 +30,7 @@ def _draw_bounding_box(image, bounding_box):
     return image
 
 
-def visualize_image(df, image_id, visualize_mask=True, fill_holes=False, path=None):
+def visualize_image(df, image_id, visualize_mask=True, fill_holes=False, dataset='competition', path=None):
 
     """
     Visualize raw image along with segmentation masks
@@ -40,27 +40,30 @@ def visualize_image(df, image_id, visualize_mask=True, fill_holes=False, path=No
     df [pandas.DataFrame of shape (n_annotation, >= 2)]: Training dataframe
     image_id (str): Image ID (filename)
     visualize_mask (bool): Whether to visualize segmentation mask over image or not
+    dataset (str): Dataset of the image (competition or livecell)
     path (str or None): Path of the output file (if path is None, plot is displayed with selected backend)
     """
 
     image_path = df.loc[df['id'] == image_id, 'id'].values[0]
     cell_type = df.loc[df['id'] == image_id, 'cell_type'].values[0]
-    plate_time = df.loc[df['id'] == image_id, 'plate_time'].values[0]
-    sample_date = df.loc[df['id'] == image_id, 'sample_date'].values[0]
-    sample_id = df.loc[df['id'] == image_id, 'sample_id'].values[0]
-    elapsed_timedelta = df.loc[df['id'] == image_id, 'elapsed_timedelta'].values[0]
+    annotation_count = df.loc[df['id'] == image_id].shape[0]
 
-    image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
+    if dataset == 'competition':
+        image = cv2.imread(f'{settings.DATA_PATH}/train_images/{image_path}.png')
+    elif dataset == 'livecell':
+        image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{image_path}.tif')
+    else:
+        image = None
+
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     fig, ax = plt.subplots(figsize=(16, 16))
     ax.imshow(image, cmap='gray')
 
     if visualize_mask:
-
         masks = []
         for mask in df.loc[df['id'] == image_id, 'annotation'].values:
-            decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=fill_holes)
+            decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=fill_holes, is_coco_encoded=(dataset == 'livecell'))
             masks.append(decoded_mask)
         masks = np.stack(masks)
         mask = np.any(masks > 0, axis=0)
@@ -70,7 +73,7 @@ def visualize_image(df, image_id, visualize_mask=True, fill_holes=False, path=No
     ax.set_ylabel('')
     ax.tick_params(axis='x', labelsize=15, pad=10)
     ax.tick_params(axis='y', labelsize=15, pad=10)
-    ax.set_title(f'{image_path} - {cell_type} - {plate_time} - {sample_date} - {sample_id} - {elapsed_timedelta}', size=20, pad=15)
+    ax.set_title(f'{image_path} - {cell_type} - {annotation_count} Annotations', size=20, pad=15)
 
     if path is None:
         plt.show()
@@ -230,12 +233,13 @@ def visualize_learning_curve(training_losses, validation_losses, title, path=Non
         ax=ax,
         label='train_loss'
     )
-    sns.lineplot(
-        x=np.arange(1, len(validation_losses) + 1),
-        y=validation_losses,
-        ax=ax,
-        label='val_loss'
-    )
+    if validation_losses is not None:
+        sns.lineplot(
+            x=np.arange(1, len(validation_losses) + 1),
+            y=validation_losses,
+            ax=ax,
+            label='val_loss'
+        )
     ax.set_xlabel('Epochs', size=15, labelpad=12.5)
     ax.set_ylabel('Loss', size=15, labelpad=12.5)
     ax.tick_params(axis='x', labelsize=12.5, pad=10)
@@ -248,37 +252,3 @@ def visualize_learning_curve(training_losses, validation_losses, title, path=Non
     else:
         plt.savefig(path)
         plt.close(fig)
-
-
-
-if __name__ == '__main__':
-
-    import pandas as pd
-    import transforms
-
-    t = transforms.get_instance_segmentation_transforms(**{
-        'horizontal_flip_probability': 0.,
-        'vertical_flip_probability': 0.,
-        'random_rotate_90_probability': 0,
-        'shift_limit': 0.0625,
-        'scale_limit': 0.1,
-        'rotate_limit': 45,
-        'shift_scale_rotate_probability': 0.0,
-        'brightness_limit': 0.2,
-        'contrast_limit': 0,
-        'brightness_contrast_probability': 0.0,
-    })['train']
-    df = pd.read_csv('../data/train.csv')
-
-    image_id = '0030fd0e6378'
-    visualize_transforms(
-        df=df,
-        image_id=image_id,
-        visualize_mask=True,
-        fill_holes=False,
-        transforms=t,
-        path=None
-    )
-
-
-
