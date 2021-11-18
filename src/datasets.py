@@ -9,12 +9,13 @@ import annotation_utils
 
 class InstanceSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, labels=None, transforms=None):
+    def __init__(self, images, masks=None, labels=None, transforms=None, dataset='raw'):
 
         self.images = images
         self.masks = masks
         self.labels = labels
         self.transforms = transforms
+        self.dataset = dataset
 
     def __len__(self):
         return len(self.images)
@@ -41,7 +42,13 @@ class InstanceSegmentationDataset(Dataset):
             - iscrowd [torch.UInt8Tensor of shape (n_objects)]: Instances with iscrowd=True will be ignored during evaluation
         """
 
-        image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
+        if self.dataset == 'raw':
+            image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
+        elif self.dataset == 'livecell':
+            image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
+        else:
+            image = None
+
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if (self.masks is not None) and (self.labels is not None):
@@ -51,7 +58,7 @@ class InstanceSegmentationDataset(Dataset):
             labels = []
 
             for mask in self.masks[idx]:
-                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=False, is_coco_encoded=(self.dataset == 'livecell'))
                 bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
@@ -96,11 +103,12 @@ class InstanceSegmentationDataset(Dataset):
 
 class SemanticSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, transforms=None):
+    def __init__(self, images, masks=None, transforms=None, dataset='raw'):
 
         self.images = images
         self.masks = masks
         self.transforms = transforms
+        self.dataset = dataset
 
     def __len__(self):
         return len(self.images)
@@ -120,7 +128,13 @@ class SemanticSegmentationDataset(Dataset):
         mask [torch.FloatTensor of shape (channel, height, width)]: Semantic segmentation mask
         """
 
-        image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
+        if self.dataset == 'raw':
+            image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
+        elif self.dataset == 'livecell':
+            image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
+        else:
+            image = None
+
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if self.masks is not None:
@@ -128,7 +142,7 @@ class SemanticSegmentationDataset(Dataset):
             masks = []
 
             for mask in self.masks[idx]:
-                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape)
+                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=False, is_coco_encoded=(self.dataset == 'livecell'))
                 masks.append(decoded_mask)
 
             masks = np.stack(masks)
