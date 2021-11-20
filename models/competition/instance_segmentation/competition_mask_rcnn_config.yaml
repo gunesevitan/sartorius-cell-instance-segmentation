@@ -23,11 +23,11 @@ model_parameters:
       - 0.04786895215511322
       - 0.04786895215511322
       - 0.04786895215511322
-    box_detections_per_img: 550
+    box_detections_per_img: 500
   in_domain_pretrained_backbone_path: null
 
 training_parameters:
-  validation_type: non_noisy_split
+  validation_type: stratified_fold
   fill_holes: False
   optimizer: SGD
   optimizer_parameters:
