@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torchvision
 import torchvision.models.detection
@@ -6,7 +7,8 @@ import torchvision.models.detection
 class MaskRCNNModel(nn.Module):
 
     def __init__(self, num_classes, fpn, pretrained=False, pretrained_backbone=False, trainable_backbone_layers=None, mask_predictor_hidden_dim=256,
-                 min_size=800, max_size=1333, image_mean=(0.485, 0.456, 0.406), image_std=(0.229, 0.224, 0.225), box_detections_per_img=100, **kwargs):
+                 min_size=800, max_size=1333, image_mean=(0.485, 0.456, 0.406), image_std=(0.229, 0.224, 0.225), box_detections_per_img=100,
+                 livecell_pretrained_model_path=None, **kwargs):
 
         super(MaskRCNNModel, self).__init__()
 
@@ -16,11 +18,26 @@ class MaskRCNNModel(nn.Module):
             box_detections_per_img=box_detections_per_img
         )
         box_predictor_in_features = self.fpn.roi_heads.box_predictor.cls_score.in_features
+        mask_predictor_in_features = self.fpn.roi_heads.mask_predictor.conv5_mask.in_channels
+        # Using pretrained weights from LIVECell dataset
+        if livecell_pretrained_model_path is not None:
+            # box_predictor and mask_predictor have to be initialized with 8 classes in order to load weights
+            # They are overwritten with random weights after LIVECell pretrained weights are loaded
+            self.fpn.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
+                in_channels=box_predictor_in_features,
+                num_classes=9
+            )
+            self.fpn.roi_heads.mask_predictor = torchvision.models.detection.mask_rcnn.MaskRCNNPredictor(
+                in_channels=mask_predictor_in_features,
+                dim_reduced=mask_predictor_hidden_dim,
+                num_classes=9
+            )
+            self.load_state_dict(torch.load(livecell_pretrained_model_path))
+
         self.fpn.roi_heads.box_predictor = torchvision.models.detection.faster_rcnn.FastRCNNPredictor(
             in_channels=box_predictor_in_features,
             num_classes=num_classes + 1
         )
-        mask_predictor_in_features = self.fpn.roi_heads.mask_predictor.conv5_mask.in_channels
         self.fpn.roi_heads.mask_predictor = torchvision.models.detection.mask_rcnn.MaskRCNNPredictor(
             in_channels=mask_predictor_in_features,
             dim_reduced=mask_predictor_hidden_dim,
