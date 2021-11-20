@@ -58,13 +58,23 @@ class InstanceSegmentationDataset(Dataset):
             labels = []
 
             for mask_idx, mask in enumerate(self.masks[idx]):
-                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=False, is_coco_encoded=(self.dataset == 'livecell'))
+                decoded_mask = annotation_utils.decode_rle_mask(
+                    rle_mask=mask,
+                    shape=image.shape,
+                    fill_holes=False,
+                    is_coco_encoded=(self.dataset == 'livecell')
+                )
                 bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
                 boxes.append(bounding_box)
                 labels.append(self.labels[idx])
-                if mask_idx > 550:
-                    break
+
+                # LIVECell dataset annotations per image is much higher than competition dataset annotations per image
+                # It is not possible to train using all annotations in LIVECell dataset so some of them are discarded
+                # 550 is used as the cutoff point since it is the highest number of annotations in a single image in competition dataset
+                if self.dataset == 'livecell':
+                    if mask_idx > 550:
+                        break
 
             if self.transforms is not None:
                 transformed = self.transforms(image=image, masks=masks, bboxes=boxes, labels=labels)
@@ -144,11 +154,16 @@ class SemanticSegmentationDataset(Dataset):
             masks = []
 
             for mask in self.masks[idx]:
-                decoded_mask = annotation_utils.decode_rle_mask(rle_mask=mask, shape=image.shape, fill_holes=False, is_coco_encoded=(self.dataset == 'livecell'))
+                decoded_mask = annotation_utils.decode_rle_mask(
+                    rle_mask=mask,
+                    shape=image.shape,
+                    fill_holes=False,
+                    is_coco_encoded=(self.dataset == 'livecell')
+                )
                 masks.append(decoded_mask)
 
             masks = np.stack(masks)
-            mask = np.any(masks > 1, axis=0)
+            mask = np.any(masks > 0, axis=0)
 
             if self.transforms is not None:
                 transformed = self.transforms(image=image, mask=mask)
@@ -176,12 +191,13 @@ class SemanticSegmentationDataset(Dataset):
 
 class ClassificationDataset(Dataset):
 
-    def __init__(self, images, image_directory, targets=None, transforms=None):
+    def __init__(self, images, image_directory, targets=None, transforms=None, dataset='competition'):
 
         self.images = images
         self.image_directory = image_directory
         self.targets = targets
         self.transforms = transforms
+        self.dataset = dataset
 
     def __len__(self):
         return len(self.images)
@@ -201,7 +217,13 @@ class ClassificationDataset(Dataset):
         target [torch.LongTensor of shape (1)]: Cell type
         """
 
-        image = cv2.imread(f'{settings.DATA_PATH}/{self.image_directory}/{self.images[idx]}.png')
+        if self.dataset == 'competition':
+            image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
+        elif self.dataset == 'livecell':
+            image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
+        else:
+            image = None
+
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         if self.transforms is not None:
