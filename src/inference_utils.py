@@ -36,12 +36,12 @@ def predict_single_image(image, model, device, nms_iou_thresholds, score_thresho
 
     # Select nms_iou_threshold and score_threshold based on the most predicted label
     most_predicted_label = mode(output['labels'].cpu().numpy())
-    nms_iou_threshold = nms_iou_thresholds[settings.LABEL_MAPPING[most_predicted_label[0][0]]]
-    score_threshold = score_thresholds[settings.LABEL_MAPPING[most_predicted_label[0][0]]]
+    nms_iou_threshold = nms_iou_thresholds[settings.COMPETITION_LABEL_DECODER[most_predicted_label[0][0]]]
+    score_threshold = score_thresholds[settings.COMPETITION_LABEL_DECODER[most_predicted_label[0][0]]]
 
     if verbose:
         print(f'{output["scores"].shape[0]} objects are predicted with {output["scores"].mean():.4f} average score')
-        print(f'Mode predicted label is {settings.LABEL_MAPPING[most_predicted_label[0][0]]} ({most_predicted_label[-1][0]}) - nms_iou_threshold: {nms_iou_threshold:.4f} - score_threshold: {score_threshold:.4f}')
+        print(f'Mode predicted label is {settings.COMPETITION_LABEL_DECODER[most_predicted_label[0][0]]} ({most_predicted_label[-1][0]}) - nms_iou_threshold: {nms_iou_threshold:.4f} - score_threshold: {score_threshold:.4f}')
 
     nms_thresholded_idx = torchvision.ops.nms(output['boxes'], output['scores'], nms_iou_threshold)
     masks = output['masks'][nms_thresholded_idx].cpu().numpy()
