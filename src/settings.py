@@ -35,3 +35,16 @@ LIVECELL_LABEL_ENCODER = {
     'skov3': 7,
     'shsy5y': 8
 }
+
+COMPETITION_AND_LIVECELL_ENCODER = {
+    'bt474': 1,
+    'a172': 2,
+    'mcf7': 3,
+    'bv2': 4,
+    'huh7': 5,
+    'skbr3': 6,
+    'skov3': 7,
+    'shsy5y': 8,
+    'cort': 9,
+    'astro': 10
+}
