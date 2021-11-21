@@ -88,6 +88,43 @@ if __name__ == '__main__':
                 post_processing_parameters=config['post_processing_parameters']
             )
 
+    elif config['main']['dataset'] == 'competition_and_livecell':
+
+        df_livecell = pd.read_csv(f'{settings.DATA_PATH}/livecell.csv')
+        df_livecell['source'] = 'livecell'
+        df_competition = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
+        df_competition['source'] = 'competition'
+
+        if config['main']['task'] == 'instance_segmentation':
+
+            df_competition = df_competition.loc[~df_competition['annotation'].isnull()]
+            competition_folds = df_competition.groupby('id')['non_noisy_split'].first().values
+            competition_labels = df_competition.groupby('id')['cell_type'].first().values
+            competition_sources = df_competition.groupby('id')['source'].first().values
+            df_competition = df_competition.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
+            df_competition['label'] = competition_labels
+            df_competition['fold'] = competition_folds
+            df_competition['source'] = competition_sources
+            df_competition = df_competition.loc[df_competition['fold'] == 0]
+
+            livecell_labels = df_livecell.groupby('id')['cell_type'].first().values
+            livecell_folds = df_livecell.groupby('id')['dataset'].first().isin(config['training_parameters']['training_set']).values
+            livecell_sources = df_livecell.groupby('id')['source'].first().values
+            df_livecell = df_livecell.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
+            df_livecell['label'] = livecell_labels
+            df_livecell['fold'] = np.uint8(~livecell_folds)
+            df_livecell['source'] = livecell_sources
+            df = pd.concat([df_competition, df_livecell], axis=0, ignore_index=True)
+            df['label'] = df['label'].map(settings.COMPETITION_AND_LIVECELL_ENCODER).astype(np.uint8)
+            print(f'Dataset Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
+
+            trainer = trainers.LIVECellInstanceSegmentationTrainer(
+                model_parameters=config['model_parameters'],
+                training_parameters=config['training_parameters'],
+                transform_parameters=config['transform_parameters'],
+                post_processing_parameters=config['post_processing_parameters']
+            )
+
     if args.mode == 'train':
         trainer.train_and_validate(df)
     elif args.mode == 'inference':

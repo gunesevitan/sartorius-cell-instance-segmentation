@@ -9,13 +9,13 @@ import annotation_utils
 
 class InstanceSegmentationDataset(Dataset):
 
-    def __init__(self, images, masks=None, labels=None, transforms=None, dataset='competition'):
+    def __init__(self, images, masks=None, labels=None, transforms=None, datasets=None):
 
         self.images = images
         self.masks = masks
         self.labels = labels
         self.transforms = transforms
-        self.dataset = dataset
+        self.datasets = datasets
 
     def __len__(self):
         return len(self.images)
@@ -42,9 +42,9 @@ class InstanceSegmentationDataset(Dataset):
             - iscrowd [torch.UInt8Tensor of shape (n_objects)]: Instances with iscrowd=True will be ignored during evaluation
         """
 
-        if self.dataset == 'competition':
+        if self.datasets[idx] == 'competition':
             image = cv2.imread(f'{settings.DATA_PATH}/train_images/{self.images[idx]}.png')
-        elif self.dataset == 'livecell':
+        elif self.datasets[idx] == 'livecell':
             image = cv2.imread(f'{settings.DATA_PATH}/livecell_images/{self.images[idx]}.tif')
         else:
             image = None
@@ -62,7 +62,7 @@ class InstanceSegmentationDataset(Dataset):
                     rle_mask=mask,
                     shape=image.shape,
                     fill_holes=False,
-                    is_coco_encoded=(self.dataset == 'livecell')
+                    is_coco_encoded=(self.datasets[idx] == 'livecell')
                 )
                 bounding_box = annotation_utils.mask_to_bounding_box(decoded_mask)
                 masks.append(decoded_mask)
@@ -72,7 +72,7 @@ class InstanceSegmentationDataset(Dataset):
                 # LIVECell dataset annotations per image is much higher than competition dataset annotations per image
                 # It is not possible to train using all annotations in LIVECell dataset so some of them are discarded
                 # 550 is used as the cutoff point since it is the highest number of annotations in a single image in competition dataset
-                if self.dataset == 'livecell':
+                if self.datasets[idx] == 'livecell':
                     if mask_idx > 550:
                         break
 
