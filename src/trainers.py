@@ -657,6 +657,7 @@ class LIVECellInstanceSegmentationTrainer:
         training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
         device = torch.device(self.training_parameters['device'])
         model = getattr(pytorch_models, self.model_parameters["model_class"])(**self.model_parameters['model_class_parameters'])
+        model.load_state_dict(torch.load('../models/competition_and_livecell/instance_segmentation/competition_and_livecell_mask_rcnn.pt'))
         model = model.to(device)
         optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
         scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])

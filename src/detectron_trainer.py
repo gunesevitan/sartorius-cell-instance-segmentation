@@ -9,43 +9,7 @@ from detectron2.engine import DefaultPredictor, DefaultTrainer
 
 import settings
 import metrics
-<<<<<<< HEAD
-
-
-class InstanceSegmentationEvaluator(DatasetEvaluator):
-
-    def __init__(self, dataset_name):
-
-        dataset = DatasetCatalog.get(dataset_name)
-        self.annotations_cache = {item['image_id']: item['annotations'] for item in dataset}
-        self.scores = []
-
-    def reset(self):
-        self.scores = []
-
-    def process(self, inputs, outputs):
-
-        for input_, output in zip(inputs, outputs):
-            if len(output['instances']) == 0:
-                self.scores.append(0)
-            else:
-                ground_truth_masks = self.annotations_cache[input_['image_id']]
-                prediction_masks = output['instances'].pred_masks.cpu().numpy()
-                average_precision = metrics.get_average_precision_detectron(ground_truth_masks, prediction_masks, verbose=True)
-                self.scores.append(average_precision)
-
-    def evaluate(self):
-        return {'mAP': np.mean(self.scores)}
-
-
-class InstanceSegmentationTrainer(DefaultTrainer):
-
-    @classmethod
-    def build_evaluator(cls, cfg, dataset_name, output_folder=None):
-        return InstanceSegmentationEvaluator(dataset_name)
-=======
 import detectron_utils
->>>>>>> 9eff86a7d07cae3720bd4f98358f3fee89345f9b
 
 
 def train_and_validate(model):
@@ -88,7 +52,7 @@ def train_and_validate(model):
         cfg.DATASETS.TRAIN = (f'training_set_fold{fold}',)
         cfg.DATASETS.TEST = (f'validation_set_fold{fold}',)
         cfg.DATALOADER.NUM_WORKERS = 4
-        cfg.SOLVER.MAX_ITER = len(DatasetCatalog.get(f'training_set_fold{fold}')) // cfg.SOLVER.IMS_PER_BATCH * 100
+        cfg.SOLVER.MAX_ITER = len(DatasetCatalog.get(f'training_set_fold{fold}')) // cfg.SOLVER.IMS_PER_BATCH * 1000
         cfg.SOLVER.IMS_PER_BATCH = 4
         cfg.TEST.EVAL_PERIOD = len(DatasetCatalog.get(f'training_set_fold{fold}')) // cfg.SOLVER.IMS_PER_BATCH
         cfg.TEST.DETECTIONS_PER_IMAGE = 550
