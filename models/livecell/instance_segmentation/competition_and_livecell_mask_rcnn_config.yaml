@@ -64,4 +64,3 @@ transform_parameters:
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.25
-
