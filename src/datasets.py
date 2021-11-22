@@ -15,7 +15,7 @@ class InstanceSegmentationDataset(Dataset):
         self.masks = masks
         self.labels = labels
         self.transforms = transforms
-        self.sources = sources
+        self.sources = sources if sources is not None else np.array(['competition'] * len(images))
 
     def __len__(self):
         return len(self.images)
