@@ -190,20 +190,9 @@ class CompetitionInstanceSegmentationTrainer:
                 training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
                 device = torch.device(self.training_parameters['device'])
                 model = getattr(pytorch_models, self.model_parameters["model_class"])(**self.model_parameters['model_class_parameters'])
-                # Using in-domain pretrained weights for backbone
-                # Backbone is trained for classification task and reached perfect accuracy
-                if self.model_parameters['in_domain_pretrained_backbone_path'] is not None:
-                    pretrained_fpn_state_dict = torch.load(self.model_parameters['in_domain_pretrained_backbone_path'])
-                    # Match key names and filter out head weights and biases
-                    pretrained_fpn_state_dict = {
-                        f'fpn.backbone.body.{k.replace("backbone.", "")}': v
-                        for k, v in pretrained_fpn_state_dict.items()
-                        if ('num_batches_tracked' not in k) and ('head' not in k)
-                    }
-                    model_state_dict = model.state_dict()
-                    model_state_dict.update(pretrained_fpn_state_dict)
-                    model.load_state_dict(model_state_dict)
-
+                if self.model_parameters['model_checkpoint_path'] is not None:
+                    model_checkpoint_path = self.model_parameters['model_checkpoint_path']
+                    model.load_state_dict(torch.load(model_checkpoint_path))
                 model = model.to(device)
                 optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
                 scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])
@@ -288,20 +277,9 @@ class CompetitionInstanceSegmentationTrainer:
             training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
             device = torch.device(self.training_parameters['device'])
             model = getattr(pytorch_models, self.model_parameters["model_class"])(**self.model_parameters['model_class_parameters'])
-            # Using in-domain pretrained weights for backbone
-            # Backbone is trained for classification task and reached perfect accuracy
-            if self.model_parameters['in_domain_pretrained_backbone_path'] is not None:
-                pretrained_fpn_state_dict = torch.load(self.model_parameters['in_domain_pretrained_backbone_path'])
-                # Match key names and filter out head weights and biases
-                pretrained_fpn_state_dict = {
-                    f'fpn.backbone.body.{k.replace("backbone.", "")}': v
-                    for k, v in pretrained_fpn_state_dict.items()
-                    if ('num_batches_tracked' not in k) and ('head' not in k)
-                }
-                model_state_dict = model.state_dict()
-                model_state_dict.update(pretrained_fpn_state_dict)
-                model.load_state_dict(model_state_dict)
-
+            if self.model_parameters['model_checkpoint_path'] is not None:
+                model_checkpoint_path = self.model_parameters['model_checkpoint_path']
+                model.load_state_dict(torch.load(model_checkpoint_path))
             model = model.to(device)
             optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
             scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])
@@ -657,6 +635,9 @@ class LIVECellInstanceSegmentationTrainer:
         training_utils.set_seed(self.training_parameters['random_state'], deterministic_cudnn=self.training_parameters['deterministic_cudnn'])
         device = torch.device(self.training_parameters['device'])
         model = getattr(pytorch_models, self.model_parameters["model_class"])(**self.model_parameters['model_class_parameters'])
+        if self.model_parameters['model_checkpoint_path'] is not None:
+            model_checkpoint_path = self.model_parameters['model_checkpoint_path']
+            model.load_state_dict(torch.load(model_checkpoint_path))
         model = model.to(device)
         optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
         scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])
@@ -853,6 +834,9 @@ class CompetitionClassificationTrainer:
         device = torch.device(self.training_parameters['device'])
         criterion = nn.CrossEntropyLoss()
         model = getattr(pytorch_models, self.model_parameters['model_class'])(**self.model_parameters['model_class_parameters'])
+        if self.model_parameters['model_checkpoint_path'] is not None:
+            model_checkpoint_path = self.model_parameters['model_checkpoint_path']
+            model.load_state_dict(torch.load(model_checkpoint_path))
         model = model.to(device)
         optimizer = getattr(optim, self.training_parameters['optimizer'])(model.parameters(), **self.training_parameters['optimizer_parameters'])
         scheduler = getattr(optim.lr_scheduler, self.training_parameters['lr_scheduler'])(optimizer, **self.training_parameters['lr_scheduler_parameters'])
