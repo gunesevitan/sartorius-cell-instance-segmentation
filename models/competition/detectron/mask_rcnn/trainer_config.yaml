@@ -1,0 +1,7 @@
+dataset:
+  training_set_name: train_stratified_fold1
+  test_set_name: val_stratified_fold1
+  image_root: ../data
+
+model:
+  path: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml
