@@ -6,6 +6,7 @@ model_parameters:
   model_name: livecell_mask_rcnn
   model_path: ../models/livecell/instance_segmentation
   model_class: MaskRCNNModel
+  model_checkpoint_path: null
   model_class_parameters:
     num_classes: 8
     fpn: maskrcnn_resnet50_fpn
@@ -23,14 +24,13 @@ model_parameters:
       - 0.043813150267825875
       - 0.043813150267825875
       - 0.043813150267825875
-    box_detections_per_img: 3000
+    box_detections_per_img: 550
 
 training_parameters:
   training_set:
     - livecell_train
-    - livecell_test
-  validation_set:
     - livecell_val
+    - livecell_test
   optimizer: SGD
   optimizer_parameters:
     lr: 0.001
@@ -46,7 +46,7 @@ training_parameters:
     training_batch_size: 4
     test_batch_size: 16
     num_workers: 4
-  epochs: 250
+  epochs: 120
   early_stopping_patience: 15
   deterministic_cudnn: False
   device: cuda
@@ -55,37 +55,11 @@ training_parameters:
 transform_parameters:
   horizontal_flip_probability: 0.5
   vertical_flip_probability: 0.5
-  random_rotate_90_probability: 0.5
+  random_rotate_90_probability: 0.25
   shift_limit: 0.0125
   scale_limit: 0.05
   rotate_limit: 0
   shift_scale_rotate_probability: 0.25
   brightness_limit: 0.25
   contrast_limit: 0.25
-  brightness_contrast_probability: 0.5
-
-post_processing_parameters:
-  nms_iou_thresholds:
-    cort: 0.70
-    shsy5y: 0.30
-    astro: 0.20
-  score_thresholds:
-    cort: 0.70
-    shsy5y: 0.30
-    astro: 0.30
-  label_thresholds:
-    cort: 0.65
-    shsy5y: 0.55
-    astro: 0.50
-  average_precision_thresholds:
-    - 0.50
-    - 0.55
-    - 0.60
-    - 0.65
-    - 0.70
-    - 0.75
-    - 0.80
-    - 0.85
-    - 0.90
-    - 0.95
-  verbose: False
+  brightness_contrast_probability: 0.25
