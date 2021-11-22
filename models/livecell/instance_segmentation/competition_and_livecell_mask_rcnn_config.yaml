@@ -6,6 +6,7 @@ model_parameters:
   model_name: competition_and_livecell_mask_rcnn
   model_path: ../models/livecell/instance_segmentation
   model_class: MaskRCNNModel
+  model_checkpoint_path: null
   model_class_parameters:
     num_classes: 10
     fpn: maskrcnn_resnet50_fpn
@@ -65,29 +66,3 @@ transform_parameters:
   brightness_limit: 0.25
   contrast_limit: 0.25
   brightness_contrast_probability: 0.25
-
-post_processing_parameters:
-  nms_iou_thresholds:
-    cort: 0.70
-    shsy5y: 0.30
-    astro: 0.20
-  score_thresholds:
-    cort: 0.70
-    shsy5y: 0.30
-    astro: 0.30
-  label_thresholds:
-    cort: 0.65
-    shsy5y: 0.55
-    astro: 0.50
-  average_precision_thresholds:
-    - 0.50
-    - 0.55
-    - 0.60
-    - 0.65
-    - 0.70
-    - 0.75
-    - 0.80
-    - 0.85
-    - 0.90
-    - 0.95
-  verbose: False

@@ -7,6 +7,7 @@ model_parameters:
   model_name: competition_resnet50_classifier
   model_path: ../models/competition/classifier
   model_class: ResNet50Model
+  model_checkpoint_path: null
   model_class_parameters:
     num_classes: 3
     pretrained: True

@@ -6,6 +6,7 @@ model_parameters:
   model_name: competition_mask_rcnn
   model_path: ../models/competition/instance_segmentation
   model_class: MaskRCNNModel
+  model_checkpoint_path: null
   model_class_parameters:
     num_classes: 3
     fpn: maskrcnn_resnet50_fpn
@@ -25,7 +26,6 @@ model_parameters:
       - 0.04786895215511322
     box_detections_per_img: 550
     livecell_pretrained_model_path: ../models/livecell/instance_segmentation/livecell_mask_rcnn_epoch120.pt
-  in_domain_pretrained_backbone_path: null
 
 training_parameters:
   validation_type: non_noisy_split

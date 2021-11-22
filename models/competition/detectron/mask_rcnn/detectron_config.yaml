@@ -1,0 +1,8 @@
+VERSION: 2
+
+DATASETS:
+  TRAIN:
+    - train_stratified_fold1
+  TEST:
+    - val_stratified_fold1
+
