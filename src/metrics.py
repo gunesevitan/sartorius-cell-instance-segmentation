@@ -136,8 +136,8 @@ def get_average_precision_detectron(ground_truth_masks, prediction_masks, thresh
     average_precision (float): Average precision score of IoU hit matrix (0.0 <= average_precision <= 1.0)
     """
 
-    ground_truth_masks = [mask_util.encode(np.asarray(ground_truth_mask, order='F')) for ground_truth_mask in ground_truth_masks]
-    prediction_masks = list(map(lambda x: x['segmentation'], prediction_masks))
+    prediction_masks = [mask_util.encode(np.asarray(mask, order='F')) for mask in prediction_masks]
+    ground_truth_masks = list(map(lambda x: x['segmentation'], ground_truth_masks))
     ious = mask_util.iou(prediction_masks, ground_truth_masks, [0] * len(ground_truth_masks))
 
     precisions = []
