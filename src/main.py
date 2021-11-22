@@ -74,7 +74,10 @@ if __name__ == '__main__':
 
         if config['main']['task'] == 'instance_segmentation':
 
+            # Training an instance segmentation model for predicting segmentation masks
             labels = df.groupby('id')['cell_type'].first().map(settings.LIVECELL_LABEL_ENCODER).values
+            # Instance segmentation model can be trained and validated with given training and validation sets
+            # Validation set can be empty or it can be selected from the LIVECell dataset
             folds = df.groupby('id')['dataset'].first().isin(config['training_parameters']['training_set']).values
             df = df.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
             df['label'] = labels
@@ -97,6 +100,7 @@ if __name__ == '__main__':
 
         if config['main']['task'] == 'instance_segmentation':
 
+            # Training an instance segmentation model for predicting segmentation masks
             df_competition = df_competition.loc[~df_competition['annotation'].isnull()]
             competition_folds = df_competition.groupby('id')['non_noisy_split'].first().values
             competition_labels = df_competition.groupby('id')['cell_type'].first().values
@@ -105,15 +109,18 @@ if __name__ == '__main__':
             df_competition['label'] = competition_labels
             df_competition['fold'] = competition_folds
             df_competition['source'] = competition_sources
-            df_competition = df_competition.loc[df_competition['fold'] == 0]
+            df_competition = df_competition.loc[df_competition['fold'] == 0, :]
 
-            livecell_labels = df_livecell.groupby('id')['cell_type'].first().values
             livecell_folds = df_livecell.groupby('id')['dataset'].first().isin(config['training_parameters']['training_set']).values
+            livecell_labels = df_livecell.groupby('id')['cell_type'].first().values
             livecell_sources = df_livecell.groupby('id')['source'].first().values
             df_livecell = df_livecell.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
             df_livecell['label'] = livecell_labels
             df_livecell['fold'] = np.uint8(~livecell_folds)
             df_livecell['source'] = livecell_sources
+
+            # Instance segmentation model can be trained and validated with given training and validation sets
+            # Validation set can be empty or it can be selected from both competition and LIVECell datasets
             df = pd.concat([df_competition, df_livecell], axis=0, ignore_index=True)
             df['label'] = df['label'].map(settings.COMPETITION_AND_LIVECELL_ENCODER).astype(np.uint8)
             print(f'Dataset Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
