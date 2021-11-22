@@ -1,10 +1,10 @@
 main:
-  dataset: competition_and_livecell
+  dataset: competition
   task: instance_segmentation
 
 model_parameters:
   model_name: competition_and_livecell_mask_rcnn
-  model_path: ../models/competition_and_livecell/instance_segmentation
+  model_path: ../models/livecell/instance_segmentation
   model_class: MaskRCNNModel
   model_class_parameters:
     num_classes: 10
@@ -31,6 +31,8 @@ training_parameters:
     - livecell_val
     - livecell_test
     - competition_non_noisy_split
+  validation_type: non_noisy_split
+  fill_holes: False
   optimizer: SGD
   optimizer_parameters:
     lr: 0.001
@@ -46,7 +48,7 @@ training_parameters:
     training_batch_size: 4
     test_batch_size: 16
     num_workers: 4
-  epochs: 120
+  epochs: 115
   early_stopping_patience: 15
   deterministic_cudnn: False
   device: cuda

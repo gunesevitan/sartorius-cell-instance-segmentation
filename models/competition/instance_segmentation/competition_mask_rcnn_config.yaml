@@ -28,19 +28,19 @@ model_parameters:
   in_domain_pretrained_backbone_path: null
 
 training_parameters:
-  validation_type: stratified_fold
+  validation_type: non_noisy_split
   fill_holes: False
   optimizer: SGD
   optimizer_parameters:
-    lr: 0.002
+    lr: 0.001
     momentum: 0.9
     weight_decay: 0
-  lr_scheduler: ReduceLROnPlateau
+  lr_scheduler: CosineAnnealingLR
   lr_scheduler_parameters:
-    factor: 0.5
-    patience: 3
-    min_lr: 0.000001
-    verbose: True
+    T_max: 25
+    eta_min: 0.0001
+    last_epoch: -1
+    verbose: False
   data_loader:
     training_batch_size: 4
     test_batch_size: 16
@@ -65,13 +65,13 @@ transform_parameters:
 
 post_processing_parameters:
   nms_iou_thresholds:
-    cort: 0.70
+    cort: 0.80
     shsy5y: 0.30
-    astro: 0.20
+    astro: 0.25
   score_thresholds:
-    cort: 0.70
-    shsy5y: 0.30
-    astro: 0.30
+    cort: 0.80
+    shsy5y: 0.35
+    astro: 0.35
   label_thresholds:
     cort: 0.65
     shsy5y: 0.55
