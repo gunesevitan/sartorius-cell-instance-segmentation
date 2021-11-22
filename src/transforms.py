@@ -58,7 +58,7 @@ def get_instance_segmentation_transforms(**transform_parameters):
     transforms (dict): Transforms of training and test sets
     """
 
-    bbox_params = {'format': 'pascal_voc',  'label_fields': ['labels'], 'min_area': 0, 'min_visibility': 0}
+    bbox_params = {'format': 'pascal_voc',  'label_fields': ['labels'], 'min_area': 0, 'min_visibility': 0.3}
 
     train_transforms = A.Compose([
         A.HorizontalFlip(p=transform_parameters['horizontal_flip_probability']),
