@@ -185,12 +185,12 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
 
     def evaluate(self):
 
-        df_scores = pd.DataFrame(columns=['scores', 'labels'])
-        df_scores['scores'] = np.array(self.scores)
-        df_scores['labels'] = np.array(self.labels)
-        df_scores = df_scores.groupby('labels')['scores'].mean().to_dict()
+        #df_scores = pd.DataFrame(columns=['scores', 'labels'])
+        #df_scores['scores'] = np.array(self.scores)
+        #df_scores['labels'] = np.array(self.labels)
+        #df_scores = df_scores.groupby('labels')['scores'].mean().to_dict()
 
-        return {'mAP': np.mean(self.scores), 'mAP cort': df_scores[0], 'mAP shsy5y': df_scores[1], 'mAP astro': df_scores[2]}
+        return {'mAP': np.mean(self.scores)} #, 'mAP cort': df_scores[0], 'mAP shsy5y': df_scores[1], 'mAP astro': df_scores[2]}
 
 
 class InstanceSegmentationTrainer(DefaultTrainer):
