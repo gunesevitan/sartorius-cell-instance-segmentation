@@ -17,6 +17,8 @@ if __name__ == '__main__':
 
     trainer_config = yaml.load(open(f'{args.config_path}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)
     detectron_config = get_cfg()
+    detectron_config['SOLVER']['T_MAX'] = CfgNode()
+    detectron_config['SOLVER']['ETA_MIN'] = CfgNode()
 
     register_coco_instances(
         name=trainer_config['DATASET']['training_set_name'],
