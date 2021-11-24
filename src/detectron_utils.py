@@ -243,8 +243,8 @@ class InstanceSegmentationTrainer(DefaultTrainer):
         elif cfg.SOLVER.LR_SCHEDULER_NAME == 'CosineAnnealingLR':
             return optim.lr_scheduler.CosineAnnealingLR(
                 optimizer,
-                T_max=cfg.SOLVER.T_MAX,
-                eta_min=cfg.SOLVER.ETA_MIN,
+                T_max=cfg.SOLVER.WARMUP_ITERS,
+                eta_min=cfg.SOLVER.WARMUP_FACTOR,
                 last_epoch=-1
             )
         else:
