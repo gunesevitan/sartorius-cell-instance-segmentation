@@ -11,6 +11,7 @@ from detectron2.engine import DefaultTrainer, BestCheckpointer
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.data import DatasetCatalog, DatasetMapper, detection_utils, build_detection_test_loader
 from detectron2.evaluation.evaluator import DatasetEvaluator
+from detectron2.solver import WarmupMultiStepLR, WarmupCosineLR
 from detectron2.utils.logger import log_every_n_seconds
 from detectron2.utils import comm
 from pycocotools import mask as mask_utils
@@ -247,5 +248,25 @@ class InstanceSegmentationTrainer(DefaultTrainer):
                 eta_min=cfg.SOLVER.WARMUP_FACTOR,
                 last_epoch=-1
             )
+        elif cfg.SOLVER.LR_SCHEDULER_NAME == 'WarmupMultiStepLR':
+                return WarmupMultiStepLR(
+                    optimizer,
+                    cfg.SOLVER.STEPS,
+                    cfg.SOLVER.GAMMA,
+                    warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+                    warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+                    warmup_method=cfg.SOLVER.WARMUP_METHOD,
+                )
+        elif cfg.SOLVER.LR_SCHEDULER_NAME == 'WarmupCosineLR':
+
+                return WarmupMultiStepLR(
+                    optimizer,
+                    cfg.SOLVER.STEPS,
+                    cfg.SOLVER.GAMMA,
+                    warmup_factor=cfg.SOLVER.WARMUP_FACTOR,
+                    warmup_iters=cfg.SOLVER.WARMUP_ITERS,
+                    warmup_method=cfg.SOLVER.WARMUP_METHOD,
+                )
+
         else:
             raise ValueError(f'Unknown LR scheduler: {cfg.SOLVER.LR_SCHEDULER_NAME}')
