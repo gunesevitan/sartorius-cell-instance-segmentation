@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import torch
+import torch.optim as optim
 from detectron2.engine.hooks import HookBase
 from detectron2.engine import DefaultTrainer, BestCheckpointer
 from detectron2.checkpoint import DetectionCheckpointer
@@ -227,3 +228,24 @@ class InstanceSegmentationTrainer(DefaultTrainer):
         if output_folder is None:
             output_folder = f'{cfg.OUTPUT_DIR}/evaluation'
         return InstanceSegmentationEvaluator(dataset_name=dataset_name)
+
+    @classmethod
+    def build_lr_scheduler(cls, cfg, optimizer):
+
+        if cfg.SOLVER.LR_SCHEDULER_NAME == 'ReduceLROnPlateau':
+            return optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer,
+                mode='min',
+                factor=cfg.SOLVER.GAMMA,
+                patience=1000,
+                min_lr=0.00001
+            )
+        elif cfg.SOLVER.LR_SCHEDULER_NAME == 'CosineAnnealingLR':
+            return optim.lr_scheduler.CosineAnnealingLR(
+                optimizer,
+                T_max=cfg.SOLVER.T_MAX,
+                eta_min=cfg.SOLVER.ETA_MIN,
+                last_epoch=-1
+            )
+        else:
+            raise ValueError(f'Unknown LR scheduler: {cfg.SOLVER.LR_SCHEDULER_NAME}')
