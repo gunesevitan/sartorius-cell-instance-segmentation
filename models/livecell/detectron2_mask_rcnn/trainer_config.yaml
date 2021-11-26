@@ -1,5 +1,5 @@
 DATASET:
-  training_set_name: train_stratified_fold1
+  training_set_name: livecell
   test_set_name: null
   image_root: ../data
 
