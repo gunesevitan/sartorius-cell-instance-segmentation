@@ -63,6 +63,7 @@ if __name__ == '__main__':
         )
         encoded_filled_mask = annotation_utils.encode_rle_mask(decoded_filled_mask)
         df_train.loc[idx, 'annotation_filled'] = encoded_filled_mask
+        df_train.loc[idx, 'annotation_broken'] = annotation_utils.is_broken(decoded_filled_mask, horizontal_line_threshold=50)
 
     print('Appending train_semi_supervised images to train.csv')
     train_semi_supervised_images = os.listdir(f'{settings.DATA_PATH}/train_semi_supervised_images')
