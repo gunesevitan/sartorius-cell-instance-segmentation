@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from scipy import ndimage
 import pycocotools.mask as mask_utils
 
@@ -61,6 +62,35 @@ def encode_rle_mask(mask):
     runs = np.where(mask[1:] != mask[:-1])[0] + 1
     runs[1::2] -= runs[::2]
     return ' '.join(str(x) for x in runs)
+
+
+def is_broken(mask, horizontal_line_threshold=50):
+
+    """
+    Check whether the masks have perfect horizontal lines with given threshold
+
+    Parameters
+    ----------
+    mask [numpy.ndarray of shape (height, width)]: 2d mask
+    horizontal_line_threshold (int): Number of horizontal line pixels
+
+    Returns
+    -------
+    is_broken (bool): Whether the mask annotation is broken or not
+    """
+
+    contours, hierarchy = cv2.findContours(mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    c = contours[0][:, 0]
+    diff = c - np.roll(c, 1, 0)
+    targets = (diff[:, 1] == 0) & (np.abs(diff[:, 0]) >= horizontal_line_threshold)
+
+    if np.any(targets):
+        if np.all(c[targets][:, 1] == 0) or np.all(c[targets][:, 1] == 519):
+            return False
+        else:
+            return True
+    else:
+        return False
 
 
 def binary_to_multi_class_mask(binary_masks):
