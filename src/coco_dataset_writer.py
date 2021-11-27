@@ -9,7 +9,7 @@ import settings
 import annotation_utils
 
 
-def annotate(idx, row, category_ids, fill_holes=False):
+def annotate(idx, row, category_ids, fill_holes=True, source='competition'):
 
     """
     Convert single row in dataframe into a COCO annotation
@@ -28,10 +28,14 @@ def annotate(idx, row, category_ids, fill_holes=False):
 
     annotation_column = 'annotation' if fill_holes is False else 'annotation_filled'
 
-    decoded_mask = annotation_utils.decode_rle_mask(row[annotation_column], shape=(row['height'], row['width']), fill_holes=False)
-    decoded_mask = np.asfortranarray(decoded_mask)
-    coco_encoded_mask = mask_utils.encode(decoded_mask)
-    coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
+    if source == 'competition':
+        decoded_mask = annotation_utils.decode_rle_mask(row[annotation_column], shape=(row['height'], row['width']), fill_holes=False)
+        decoded_mask = np.asfortranarray(decoded_mask)
+        coco_encoded_mask = mask_utils.encode(decoded_mask)
+        coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
+    elif source == 'livecell':
+        coco_encoded_mask = {'size': [520, 704], 'counts': row[annotation_column]}
+
     area = mask_utils.area(coco_encoded_mask).item()
     bbox = mask_utils.toBbox(coco_encoded_mask).astype(int).tolist()
 
@@ -50,54 +54,76 @@ def annotate(idx, row, category_ids, fill_holes=False):
 
 if __name__ == '__main__':
 
-    df_train = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
-    df_train = df_train.loc[~df_train['annotation'].isnull()]
+    DATASET = 'competition'
 
-    category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
-    categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
+    if DATASET == 'competition':
 
-    for fold in sorted(df_train['stratified_fold'].unique()):
+        df_train = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
+        df_train = df_train.loc[~df_train['annotation'].isnull()].reset_index(drop=True)
+        df_train = df_train[df_train['annotation_broken'] == False].reset_index(drop=True)
 
-        print(f'Writing Stratified Fold {int(fold)} COCO Datasets')
+        category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
+        categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
+
+        for fold in sorted(df_train['stratified_fold'].unique()):
+
+            print(f'Writing Stratified Fold {int(fold)} COCO Datasets')
+
+            train_images = [
+                {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
+                for image_id, row in
+                df_train.loc[df_train['stratified_fold'] != fold].groupby('id').agg('first').iterrows()
+            ]
+            train_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['stratified_fold'] != fold].iterrows(), total=len(df_train.loc[df_train['stratified_fold'] != fold])))
+            train_dataset = {'categories': categories, 'images': train_images, 'annotations': train_annotations}
+            with open(f'{settings.DATA_PATH}/coco_datasets/train_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
+                json.dump(train_dataset, f, ensure_ascii=True, indent=4)
+
+            val_images = [
+                {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
+                for image_id, row in
+                df_train.loc[df_train['stratified_fold'] == fold].groupby('id').agg('first').iterrows()
+            ]
+            val_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['stratified_fold'] == fold].iterrows(), total=len(df_train.loc[df_train['stratified_fold'] == fold])))
+            val_dataset = {'categories': categories, 'images': val_images, 'annotations': val_annotations}
+            with open(f'{settings.DATA_PATH}/coco_datasets/val_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
+                json.dump(val_dataset, f, ensure_ascii=True, indent=4)
+
+        print(f'Non-noisy Split COCO Datasets')
 
         train_images = [
             {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
             for image_id, row in
-            df_train.loc[df_train['stratified_fold'] != fold].groupby('id').agg('first').iterrows()
+            df_train.loc[df_train['non_noisy_split'] == 0].groupby('id').agg('first').iterrows()
         ]
-        train_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['stratified_fold'] != fold].iterrows(), total=len(df_train.loc[df_train['stratified_fold'] != fold])))
+        train_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['non_noisy_split'] == 0].iterrows(), total=len(df_train.loc[df_train['non_noisy_split'] == 0])))
         train_dataset = {'categories': categories, 'images': train_images, 'annotations': train_annotations}
-        with open(f'{settings.DATA_PATH}/coco_datasets/train_straified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
+        with open(f'{settings.DATA_PATH}/coco_datasets/train_non_noisy.json', 'w', encoding='utf-8') as f:
             json.dump(train_dataset, f, ensure_ascii=True, indent=4)
 
         val_images = [
             {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
             for image_id, row in
-            df_train.loc[df_train['stratified_fold'] == fold].groupby('id').agg('first').iterrows()
+            df_train.loc[df_train['non_noisy_split'] == 1].groupby('id').agg('first').iterrows()
         ]
-        val_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['stratified_fold'] == fold].iterrows(), total=len(df_train.loc[df_train['stratified_fold'] == fold])))
+        val_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['non_noisy_split'] == 1].iterrows(), total=len(df_train.loc[df_train['non_noisy_split'] == 1])))
         val_dataset = {'categories': categories, 'images': val_images, 'annotations': val_annotations}
-        with open(f'{settings.DATA_PATH}/coco_datasets/val_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
+        with open(f'{settings.DATA_PATH}/coco_datasets/val_non_noisy.json', 'w', encoding='utf-8') as f:
             json.dump(val_dataset, f, ensure_ascii=True, indent=4)
 
-    print(f'Non-noisy Split COCO Datasets')
+    elif DATASET == 'livecell':
 
-    train_images = [
-        {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
-        for image_id, row in
-        df_train.loc[df_train['non_noisy_split'] == 0].groupby('id').agg('first').iterrows()
-    ]
-    train_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['non_noisy_split'] == 0].iterrows(), total=len(df_train.loc[df_train['non_noisy_split'] == 0])))
-    train_dataset = {'categories': categories, 'images': train_images, 'annotations': train_annotations}
-    with open(f'{settings.DATA_PATH}/coco_datasets/train_non_noisy.json', 'w', encoding='utf-8') as f:
-        json.dump(train_dataset, f, ensure_ascii=True, indent=4)
+        df_livecell = pd.read_csv(f'{settings.DATA_PATH}/livecell.csv')
+        category_ids = settings.LIVECELL_LABEL_ENCODER
+        categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
 
-    val_images = [
-        {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
-        for image_id, row in
-        df_train.loc[df_train['non_noisy_split'] == 1].groupby('id').agg('first').iterrows()
-    ]
-    val_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_train.loc[df_train['non_noisy_split'] == 1].iterrows(), total=len(df_train.loc[df_train['non_noisy_split'] == 1])))
-    val_dataset = {'categories': categories, 'images': val_images, 'annotations': val_annotations}
-    with open(f'{settings.DATA_PATH}/coco_datasets/val_non_noisy.json', 'w', encoding='utf-8') as f:
-        json.dump(val_dataset, f, ensure_ascii=True, indent=4)
+        livecell_images = [
+            {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'livecell_images/{image_id}.tif'}
+            for image_id, row in
+            df_livecell.groupby('id').agg('first').iterrows()
+        ]
+
+        livecell_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_livecell.iterrows(), total=len(df_livecell)))
+        livecell_dataset = {'categories': categories, 'images': livecell_images, 'annotations': livecell_annotations}
+        with open(f'{settings.DATA_PATH}/coco_datasets/livecell.json', 'w', encoding='utf-8') as f:
+            json.dump(livecell_dataset, f, ensure_ascii=True, indent=4)
