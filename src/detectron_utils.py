@@ -1,7 +1,13 @@
+import os
 import logging
 import copy
 import time
 import datetime
+import collections
+import heapq
+import operator
+import math
+from tqdm import tqdm
 import numpy as np
 import pandas as pd
 import torch
@@ -116,6 +122,173 @@ class EvalLossHook(HookBase):
                 self.trainer.storage.put_scalar(f'val_{eval_loss}', loss_value)
 
 
+def average_checkpoints(inputs, state_dict_key_name='model'):
+
+    params_dict = collections.OrderedDict()
+    params_keys = None
+    new_state = None
+    num_models = len(inputs)
+
+    for fpath in tqdm(inputs):
+
+        state = torch.load(fpath, map_location=torch.device('cpu'))
+        print(fpath, state.keys())
+        state = state[state_dict_key_name] if state_dict_key_name in state else state
+
+        if new_state is None:
+            new_state = state
+
+        model_params = state
+
+        model_params_keys = list(model_params.keys())
+        if params_keys is None:
+            params_keys = model_params_keys
+        elif params_keys != model_params_keys:
+            raise KeyError
+
+        for k in params_keys:
+            p = model_params[k]
+            if isinstance(p, torch.HalfTensor):
+                p = p.float()
+            if k not in params_dict:
+                params_dict[k] = p.clone()
+            else:
+                params_dict[k] += p
+
+    averaged_params = collections.OrderedDict()
+    for k, v in params_dict.items():
+        averaged_params[k] = v
+        if averaged_params[k].is_floating_point():
+            averaged_params[k].div_(num_models)
+        else:
+            averaged_params[k] //= num_models
+
+    new_state = averaged_params
+    return {state_dict_key_name: new_state,}
+
+
+class TopKAveragerCheckpointer(HookBase):
+
+    class Ckpt:
+
+        def __init__(self, score, iters, checkpointer):
+
+            self.score = score
+            self.iters = iters
+            self.checkpointer = checkpointer
+            self.filename = f'best_model_{score:.5f}'
+
+        def save(self, additional_state={}):
+            self.checkpointer.save(f'{self.filename}', **additional_state)
+
+        def remove_file(self):
+            path = os.path.join(self.checkpointer.save_dir, f'{self.filename}.pth')
+            if os.path.exists(path):
+                os.remove(path)
+            else:
+                print(f"{path} does not exist, couldn't delete!")
+
+        def __lt__(self, other):
+
+            if isinstance(other, float):
+                return self.score < other
+
+            if isinstance(other, TopKAveragerCheckpointer.Ckpt):
+                return self.score < other.score
+
+            raise NotImplemented
+
+    def __init__(self, eval_period, checkpointer, val_metric, k=3, mode='max', filename='topk_avg.pth'):
+
+        self._logger = logging.getLogger(__name__)
+        self._period = eval_period
+        self._val_metric = val_metric
+
+        assert mode in [
+            'max',
+            'min',
+        ], f'[TopKAveragerCheckpointer] Mode "{mode}" to `BestCheckpointer` is unknown. It should be one of {"max", "min"}.'
+        if mode == 'max':
+            self._compare = operator.gt
+        else:
+            self._compare = operator.lt
+
+        self._checkpointer = checkpointer
+        self._filename = filename
+
+        self._k = k
+        self._topk = []
+        self._multiplier = 1 if mode == 'max' else -1
+
+    def log(self, data):
+        self._logger.info(data)
+        print(data)
+
+    def _best_checking(self):
+
+        metric_tuple = self.trainer.storage.latest().get(self._val_metric)
+        if metric_tuple is None:
+            self._logger.warning(
+                f"[TopKAveragerCheckpointer] Given val metric {self._val_metric} does not seem to be computed/stored."
+                "Will not be checkpointing based on it."
+            )
+            return
+        else:
+            latest_metric, metric_iter = metric_tuple
+
+        if math.isnan(latest_metric) or math.isinf(latest_metric):
+            self.log(
+                f"[TopKAveragerCheckpointer] Metric currently not valid: {metric_tuple}; skipping."
+            )
+            return
+
+        score = latest_metric * self._multiplier
+        ni = self.Ckpt(score, metric_iter, self._checkpointer)
+        additional_state = {"iteration": metric_iter}
+        if len(self._topk) < self._k:
+            ni.save(additional_state)
+            self._topk.append(ni)
+            if len(self._topk) == self._k:
+                heapq.heapify(self._topk)
+            self.log(
+                f"[TopKAveragerCheckpointer] Building heap: {len(self._topk)}"
+            )
+        else:
+            if not (ni < self._topk[0]):
+                oldie = heapq.heappop(self._topk)
+                oldie.remove_file()
+                ni.save(additional_state)
+                heapq.heappush(self._topk, ni)
+                self.log(
+                    f"[TopKAveragerCheckpointer] Heap shuffled with old {oldie.score} @ {oldie.iters} steps vs new {ni.score} @ {metric_iter} steps"
+                )
+            else:
+                self.log(
+                    f"[TopKAveragerCheckpointer] Heap not shuffled. Heap-top: {self._topk[0].score} @ {self._topk[0].iters} steps, current: {score} @ {metric_iter} steps"
+                )
+
+    def after_step(self):
+        next_iter = self.trainer.iter + 1
+        if (
+            self._period > 0
+            and next_iter % self._period == 0
+            and next_iter != self.trainer.max_iter
+        ):
+            self._best_checking()
+
+    def after_train(self):
+
+        if self.trainer.iter + 1 >= self.trainer.max_iter:
+            self._best_checking()
+
+        model_paths = [os.path.join(self._checkpointer.save_dir, f'{i.filename}.pth') for i in self._topk]
+        self.log(
+            f"[TopKAveragerCheckpointer] Shredding the heap: {model_paths}"
+        )
+        avg = average_checkpoints(model_paths)
+        torch.save(avg, self._filename)
+
+
 class AugmentationMapper:
 
     def __init__(self, cfg, is_train=True):
@@ -220,7 +393,15 @@ class InstanceSegmentationTrainer(DefaultTrainer):
                 val_metric='mAP',
                 mode='max'
             )
-            hooks.insert(-1, best_checkpointer)
+
+            topk_averager_checkpointer = TopKAveragerCheckpointer(
+                eval_period=self.cfg.TEST.EVAL_PERIOD,
+                checkpointer=self.checkpointer,
+                val_metric='mAP',
+                mode='max',
+                k=3
+            ),
+            hooks.insert(-1, topk_averager_checkpointer)
 
         return hooks
 

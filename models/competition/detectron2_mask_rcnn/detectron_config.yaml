@@ -10,7 +10,7 @@ MODEL:
     - 12.206579996359626
     - 12.206579996359626
   BACKBONE:
-    FREEZE_AT: 0
+    FREEZE_AT: 2
   FPN:
     IN_FEATURES:
       - res2
@@ -100,9 +100,9 @@ INPUT:
 
 DATASETS:
   TRAIN:
-    - train_stratified_fold1
+    - train_raw_stratified_fold1
   TEST:
-    - val_stratified_fold1
+    - val_raw_stratified_fold1
 
 DATALOADER:
   NUM_WORKERS: 4
@@ -119,8 +119,8 @@ SOLVER:
   NESTEROV: False
   WEIGHT_DECAY: 0.00001
   WEIGHT_DECAY_NORM: 0.0
-  GAMMA: 0.5
-  STEPS: [1200, 2400, 3600, 4800]
+  GAMMA: 0.2
+  STEPS: [1200, 2400, 3600, 4800, 6000]
   WARMUP_FACTOR: 0.0
   WARMUP_ITERS: 0
   WARMUP_METHOD: linear
@@ -152,7 +152,7 @@ TEST:
     MAX_SIZE: 4000
     FLIP: True
 
-OUTPUT_DIR: ../models/competition/detectron/mask_rcnn
+OUTPUT_DIR: ../models/competition/detectron2_mask_rcnn
 SEED: 42
 CUDNN_BENCHMARK: False
 VIS_PERIOD: 0
