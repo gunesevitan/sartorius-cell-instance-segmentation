@@ -38,5 +38,5 @@ if __name__ == '__main__':
     detectron_config.merge_from_file(f'{args.config_path}/detectron_config.yaml')
 
     trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
-    trainer.resume_or_load(resume=False)
+    trainer.resume_or_load(resume=True)
     trainer.train()
