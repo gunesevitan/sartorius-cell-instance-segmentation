@@ -33,11 +33,11 @@ if __name__ == '__main__':
         )
     train_dataset = DatasetCatalog.get(trainer_config['DATASET']['training_set_name'])
 
-    detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['path']))
-    if trainer_config['MODEL']['path'].split('.')[-1] == 'yaml':
-        detectron_config.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(trainer_config['MODEL']['path'])
-    elif trainer_config['MODEL']['path'].split('.')[-1] == 'pth':
-        detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['path']
+    detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
+    if trainer_config['MODEL']['pretrained_model_path'].split('.')[-1] == 'yaml':
+        detectron_config.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(trainer_config['MODEL']['pretrained_model_path'])
+    elif trainer_config['MODEL']['pretrained_model_path'].split('.')[-1] == 'pth':
+        detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['pretrained_model_path']
     detectron_config.merge_from_file(f'{args.config_path}/detectron_config.yaml')
 
     trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
