@@ -4,25 +4,5 @@ DATASET:
   image_root: ../data
 
 MODEL:
-<<<<<<< HEAD
-  path: COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml
-
-AUGMENTATIONS:
-  HorizontalFlip:
-    p: 0.5
-  VerticalFlip:
-    p: 0.5
-  RandomRotate90:
-    p: 0.25
-  ShiftScaleRotate:
-    shift_limit: 0.0125
-    scale_limit: 0.05
-    rotate_limit: 0
-    p: 0.25
-  RandomBrightnessContrast:
-    brightness_limit: 0.25
-    contrast_limit: 0.25
-    p: 0.25
-=======
   path: ../models/livecell_detectron2_mask_rcnn/livecell_mask_rcnn_epoch1.pth
->>>>>>> 5d6a5fe2f4cb846b7bec9b39a1b30b539a6a61c3
+
