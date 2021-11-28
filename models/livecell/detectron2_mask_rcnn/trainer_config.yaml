@@ -4,4 +4,5 @@ DATASET:
   image_root: ../data
 
 MODEL:
-  path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
+  model_zoo_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
+  pretrained_model_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml

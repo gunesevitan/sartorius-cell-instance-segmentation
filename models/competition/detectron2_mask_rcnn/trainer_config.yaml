@@ -4,5 +4,6 @@ DATASET:
   image_root: ../data
 
 MODEL:
-  path: ../models/livecell_detectron2_mask_rcnn/livecell_mask_rcnn_epoch1.pth
+  model_zoo_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
+  pretrained_model_path: ../models/livecell_detectron2_mask_rcnn/livecell_mask_rcnn_epoch1.pth
 
