@@ -4,7 +4,7 @@ DATASET:
   image_root: ../data
 
 MODEL:
-  path: COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml
+  path: COCO-InstanceSegmentation/mask_rcnn_R_101_FPN_3x.yaml
 
 AUGMENTATIONS:
   HorizontalFlip:
