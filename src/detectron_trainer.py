@@ -3,6 +3,7 @@ import argparse
 from detectron2.config import get_cfg
 from detectron2.data import DatasetCatalog
 from detectron2.data.datasets import register_coco_instances
+from detectron2.checkpoint import DetectionCheckpointer
 from detectron2 import model_zoo
 
 import settings
@@ -41,12 +42,14 @@ if __name__ == '__main__':
         detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['pretrained_model_path']
     detectron_config.merge_from_file(f'{args.config_path}/detectron_config.yaml')
 
+    if args.mode == 'eval':
+        detectron_config.MODEL.WEIGHTS = '../models/competition/detectron_mask_rcnn_clean_fold3.pth'
+
     trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
     trainer.resume_or_load(resume=False)
 
     if args.mode == 'train':
         trainer.train()
     elif args.mode == 'eval':
-        detectron_config.MODEL.WEIGHTS = '../models/competition/detectron_mask_rcnn_clean_fold3.pth'
         model = trainer.build_model(detectron_config)
         trainer.test(cfg=detectron_config, model=model)
