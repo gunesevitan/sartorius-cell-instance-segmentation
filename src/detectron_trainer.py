@@ -43,11 +43,7 @@ if __name__ == '__main__':
     detectron_config.merge_from_file(f'{args.config_path}/detectron_config.yaml')
 
     if args.mode == 'eval':
-<<<<<<< HEAD
-        detectron_config.MODEL.WEIGHTS = '../models/competition/detectron2_mask_rcnn/competition_mask_rcnn_clean_fold3.pth'
-=======
         detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['eval_model_path']
->>>>>>> d2dbda4193f98e97cec75a89a78cac7091eee431
 
     trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
     trainer.resume_or_load(resume=False)
