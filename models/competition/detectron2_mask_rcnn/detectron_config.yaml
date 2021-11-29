@@ -100,9 +100,9 @@ INPUT:
 
 DATASETS:
   TRAIN:
-    - train_clean_stratified_fold3
+    - train_clean_stratified_fold4
   TEST:
-    - val_clean_stratified_fold3
+    - val_clean_stratified_fold4
 
 DATALOADER:
   NUM_WORKERS: 4

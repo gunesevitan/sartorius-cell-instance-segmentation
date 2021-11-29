@@ -1,8 +1,10 @@
 DATASET:
-  training_set_name: train_clean_stratified_fold3
-  test_set_name: val_clean_stratified_fold3
+  training_set_name: train_clean_stratified_fold4
+  test_set_name: val_clean_stratified_fold4
   image_root: ../data
 
 MODEL:
   model_zoo_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
   pretrained_model_path: ../models/livecell/detectron2_mask_rcnn/livecell_mask_rcnn_epoch10.pth
+  eval_model_path: ../models/competition/detectron2_mask_rcnn/competition_mask_rcnn_clean_fold4.pth
+
