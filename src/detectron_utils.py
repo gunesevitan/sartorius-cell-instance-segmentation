@@ -319,6 +319,7 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
         df_scores['scores'] = np.array(self.scores)
         df_scores['labels'] = np.array(self.labels)
         df_scores = df_scores.groupby('labels')['scores'].mean().to_dict()
+        print(df_scores)
 
         return {'mAP': np.mean(self.scores), 'mAP cort': df_scores[0], 'mAP shsy5y': df_scores[1], 'mAP astro': df_scores[2]}
 
