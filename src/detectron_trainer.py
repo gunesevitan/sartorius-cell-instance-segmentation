@@ -52,4 +52,9 @@ if __name__ == '__main__':
         trainer.train()
     elif args.mode == 'eval':
         model = trainer.build_model(detectron_config)
+        DetectionCheckpointer(
+            model=model,
+            save_dir=detectron_config.OUTPUT_DIR
+        ).resume_or_load(detectron_config.MODEL.WEIGHTS, resume=False)
         res = trainer.test(cfg=detectron_config, model=model)
+
