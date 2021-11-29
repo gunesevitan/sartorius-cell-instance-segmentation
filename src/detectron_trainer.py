@@ -13,6 +13,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
     parser.add_argument('config_path', type=str)
+    parser.add_argument('mode', type=str)
     args = parser.parse_args()
 
     trainer_config = yaml.load(open(f'{args.config_path}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)
@@ -42,4 +43,9 @@ if __name__ == '__main__':
 
     trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
     trainer.resume_or_load(resume=False)
-    trainer.train()
+
+    if args.mode == 'train':
+        trainer.train()
+    elif args.mode == 'eval':
+        model = trainer.build_model(detectron_config)
+        trainer.test(cfg=detectron_config, model=model)
