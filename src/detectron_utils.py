@@ -365,7 +365,7 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
         #df_scores['labels'] = np.array(self.labels)
         #df_scores = df_scores.groupby('labels')['scores'].mean().to_dict()
 
-        return {'mAP': np.mean(self.scores)} #, 'mAP cort': df_scores[0], 'mAP shsy5y': df_scores[1], 'mAP astro': df_scores[2]}
+        return {'mAP': np.mean(self.scores)} #'mAP cort': df_scores[0], 'mAP shsy5y': df_scores[1], 'mAP astro': df_scores[2]}
 
 
 class InstanceSegmentationTrainer(DefaultTrainer):
@@ -397,10 +397,10 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             topk_averager_checkpointer = TopKAveragerCheckpointer(
                 eval_period=self.cfg.TEST.EVAL_PERIOD,
                 checkpointer=self.checkpointer,
-                val_metric='mAP',
-                mode='max',
+                val_metric='val_total_loss',
+                mode='min',
                 k=3
-            ),
+            )
             hooks.insert(-1, topk_averager_checkpointer)
 
         return hooks
