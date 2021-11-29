@@ -49,4 +49,4 @@ if __name__ == '__main__':
     elif args.mode == 'eval':
         detectron_config.MODEL.WEIGHTS = '../models/competition/detectron_mask_rcnn_clean_fold3.pth'
         model = trainer.build_model(detectron_config)
-        trainer.test(cfg=detectron_config, model=model)
+        res = trainer.test(cfg=detectron_config, model=model)
