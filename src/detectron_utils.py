@@ -303,13 +303,14 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
         for input_, output in zip(inputs, outputs):
             if len(output['instances']) == 0:
                 self.scores.append(0)
-                self.labels.append(np.nan)
+                annotation = self.annotations_cache[input_['image_id']]
+                label = np.unique(list(map(lambda x: x['category_id'], annotation)))[0]
+                self.labels.append(label)
             else:
                 annotation = self.annotations_cache[input_['image_id']]
                 prediction_masks = output['instances'].pred_masks.cpu().numpy()
                 average_precision = metrics.get_average_precision_detectron(annotation, prediction_masks, verbose=False)
                 self.scores.append(average_precision)
-
                 label = np.unique(list(map(lambda x: x['category_id'], annotation)))[0]
                 self.labels.append(label)
 
