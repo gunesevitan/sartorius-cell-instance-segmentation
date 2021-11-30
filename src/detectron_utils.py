@@ -49,12 +49,7 @@ class EvalLossHook(HookBase):
 
         start_time = time.perf_counter()
         total_compute_time = 0
-        cls_losses = []
-        box_reg_losses = []
-        mask_losses = []
-        rpn_cls_losses = []
-        rpn_loc_losses = []
-        total_losses = []
+        losses = collections.defaultdict(list)
 
         for idx, inputs in enumerate(self._data_loader):
 
@@ -82,30 +77,10 @@ class EvalLossHook(HookBase):
                 )
 
             loss_dict = self._get_loss(inputs)
-            cls_losses.append(loss_dict['loss_cls'])
-            box_reg_losses.append(loss_dict['loss_box_reg'])
-            mask_losses.append(loss_dict['loss_mask'])
-            rpn_cls_losses.append(loss_dict['loss_rpn_cls'])
-            rpn_loc_losses.append(loss_dict['loss_rpn_loc'])
-            total_losses.append(loss_dict['loss_total'])
+            for k, v in loss_dict.items():
+                losses[k].append(v)
 
-        cls_loss = np.mean(cls_losses)
-        box_reg_loss = np.mean(box_reg_losses)
-        mask_loss = np.mean(mask_losses)
-        rpn_cls_loss = np.mean(rpn_cls_losses)
-        rpn_loc_loss = np.mean(rpn_loc_losses)
-        total_loss = np.mean(total_losses)
-        comm.synchronize()
-
-        eval_losses = {
-            'cls_loss': cls_loss,
-            'box_reg_loss': box_reg_loss,
-            'mask_loss': mask_loss,
-            'rpn_cls_loss': rpn_cls_loss,
-            'rpn_loc_loss': rpn_loc_loss,
-            'total_loss': total_loss
-        }
-
+        eval_losses = {k: np.mean(v) for k, v in losses.items()}
         return eval_losses
 
     def after_step(self):
