@@ -164,13 +164,19 @@ def mask_to_polygon(mask):
         positive_orientation='low'
     )
     segmentations = []
+    polygons = []
 
     for obj in contours:
+
         obj -= 1
         obj = np.flip(obj, axis=1)
+
         if len(obj) > 2:
+
             polygon = Polygon(obj)
             polygon = polygon.simplify(tolerance=0.5, preserve_topology=True)
+            polygons.append(polygon)
+
             if polygon.is_empty is False:
                 try:
                     segmentation = np.array(polygon.exterior.coords).ravel().tolist()
@@ -179,7 +185,7 @@ def mask_to_polygon(mask):
                 except:
                     continue
 
-    return segmentations
+    return segmentations, polygons
 
 
 def polygon_to_mask(polygon, shape):
