@@ -1,6 +1,9 @@
 import numpy as np
 import cv2
+from PIL import Image, ImageDraw
 from scipy import ndimage
+from skimage import measure
+from shapely.geometry import Polygon
 import pycocotools.mask as mask_utils
 
 
@@ -138,3 +141,74 @@ def mask_to_bounding_box(mask):
     ]
 
     return bounding_box
+
+
+def mask_to_polygon(mask):
+
+    """
+    Get polygon from a binary mask
+
+    Parameters
+    ----------
+    mask [numpy.ndarray of shape (height, width)]: 2d binary mask
+
+    Returns
+    -------
+    polygons [list of shape (n_objects)]: Polygons of the objects
+    """
+
+    contours = measure.find_contours(
+        mask,
+        level=0.5,
+        fully_connected='low',
+        positive_orientation='low'
+    )
+    segmentations = []
+    polygons = []
+
+    for obj in contours:
+
+        obj -= 1
+        obj = np.flip(obj, axis=1)
+
+        if len(obj) > 2:
+
+            polygon = Polygon(obj)
+            polygon = polygon.simplify(tolerance=0.5, preserve_topology=True)
+            polygons.append(polygon)
+
+            if polygon.is_empty is False:
+                try:
+                    segmentation = np.array(polygon.exterior.coords).ravel().tolist()
+                    segmentation = np.clip(segmentation, a_min=0, a_max=np.max(mask.shape) - 1).tolist()
+                    segmentations.append(segmentation)
+                except:
+                    continue
+
+    return segmentations, polygons
+
+
+def polygon_to_mask(polygon, shape):
+
+    """
+    Get binary mask from a polygon
+
+    Parameters
+    ----------
+    polygon [list of shape (n_points)]: Polygon
+
+    Returns
+    -------
+    mask [numpy.ndarray of shape (height, width)]: 2d binary mask
+    """
+
+    # Convert numpy.array to list of tuple pairs of X and Y coordinates
+    points = np.array(polygon).reshape(int(len(polygon) / 2), 2)
+    points = [(point[0], point[1]) for point in points]
+    mask = Image.new('L', (shape[1], shape[0]), 0)
+
+    # Draw mask from the polygon
+    ImageDraw.Draw(mask).polygon(points, outline=1, fill=1)
+    mask = np.array(mask).astype(np.uint8)
+
+    return mask
