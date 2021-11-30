@@ -4,12 +4,13 @@ from joblib import Parallel, delayed
 import numpy as np
 import pandas as pd
 import pycocotools.mask as mask_utils
+from shapely.geometry import MultiPolygon
 
 import settings
 import annotation_utils
 
 
-def annotate(idx, row, category_ids, fill_holes=True, source='competition'):
+def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=False, source='livecell'):
 
     """
     Convert single row in dataframe into a COCO annotation
@@ -18,12 +19,13 @@ def annotate(idx, row, category_ids, fill_holes=True, source='competition'):
     ----------
     idx (int): Index of the row
     row (pandas.Series): Values in row
+    segmentation_format (str): Segmentation format (bitmask or polygon)
     category_ids (dict): Dictionary of label mapping
     fill_holes (bool): Whether to use filled annotations or not
 
     Returns
     -------
-    transforms (dict): Transforms of training and test sets
+    annotation (dict): Single dictionary of annotation
     """
 
     annotation_column = 'annotation' if fill_holes is False else 'annotation_filled'
@@ -34,27 +36,54 @@ def annotate(idx, row, category_ids, fill_holes=True, source='competition'):
         coco_encoded_mask = mask_utils.encode(decoded_mask)
         coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
     elif source == 'livecell':
-        coco_encoded_mask = {'size': [520, 704], 'counts': row[annotation_column]}
+        if segmentation_format == 'bitmask':
+            coco_encoded_mask = {'size': [520, 704], 'counts': row[annotation_column]}
+        elif segmentation_format == 'polygon':
+            decoded_mask = annotation_utils.decode_rle_mask(row[annotation_column], shape=(row['height'], row['width']), fill_holes=False, is_coco_encoded=True)
 
-    area = mask_utils.area(coco_encoded_mask).item()
-    bbox = mask_utils.toBbox(coco_encoded_mask).astype(int).tolist()
+    if segmentation_format == 'bitmask':
 
-    annotation = {
-        'segmentation': coco_encoded_mask,
-        'bbox': bbox,
-        'area': area,
-        'image_id': row['id'],
-        'category_id': category_ids[row['cell_type']],
-        'iscrowd': 0,
-        'id': idx
-    }
+        area = mask_utils.area(coco_encoded_mask).item()
+        bbox = mask_utils.toBbox(coco_encoded_mask).astype(int).tolist()
+
+        annotation = {
+            'segmentation': coco_encoded_mask,
+            'bbox': bbox,
+            'area': area,
+            'image_id': row['id'],
+            'category_id': category_ids[row['cell_type']],
+            'iscrowd': 0,
+            'id': idx
+        }
+
+    elif segmentation_format == 'polygon':
+
+        segmentations, polygons = annotation_utils.mask_to_polygon(decoded_mask)
+
+        if len(segmentations) > 0:
+            multi_polygon = MultiPolygon(polygons)
+            x, y, x_max, y_max = multi_polygon.bounds
+            width = x_max - x
+            height = y_max - y
+            bbox = (x, y, width, height)
+            area = multi_polygon.area
+
+            annotation = {
+                'segmentation': segmentations,
+                'bbox': bbox,
+                'area': area,
+                'image_id': row['id'],
+                'category_id': category_ids[row['cell_type']],
+                'iscrowd': 0,
+                'id': idx
+            }
 
     return annotation
 
 
 if __name__ == '__main__':
 
-    DATASET = 'competition'
+    DATASET = 'livecell'
 
     if DATASET == 'competition':
 
