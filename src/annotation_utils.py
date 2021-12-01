@@ -203,8 +203,11 @@ def polygon_to_mask(polygon, shape):
     """
 
     # Convert numpy.array to list of tuple pairs of X and Y coordinates
+    print(polygon)
     points = np.array(polygon).reshape(-1, 2)
+    print(points)
     points = [(point[0], point[1]) for point in points]
+    print(points)
     mask = Image.new('L', (shape[1], shape[0]), 0)
 
     # Draw mask from the polygon
