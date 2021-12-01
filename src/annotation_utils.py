@@ -75,7 +75,7 @@ def is_broken(mask, horizontal_line_threshold=50):
     Parameters
     ----------
     mask [numpy.ndarray of shape (height, width)]: 2d mask
-    horizontal_line_threshold (int): Number of horizontal line pixels
+    horizontal_line_threshold (int): Number of consecutive horizontal line pixels
 
     Returns
     -------
@@ -99,7 +99,7 @@ def is_broken(mask, horizontal_line_threshold=50):
 def binary_to_multi_class_mask(binary_masks):
 
     """
-    Encode multiple 2d binary masks into a single 2d multi-class segmentation mask
+    Encode multiple 2d binary masks into a single 2d multi-object segmentation mask
 
     Parameters
     ----------
@@ -107,15 +107,15 @@ def binary_to_multi_class_mask(binary_masks):
 
     Returns
     -------
-    multi_class_mask [numpy.ndarray of shape (height, width)]: 2d multi-class mask
+    multi_object_mask [numpy.ndarray of shape (height, width)]: 2d multi-object mask
     """
 
-    multi_class_mask = np.zeros((binary_masks.shape[1], binary_masks.shape[2]))
+    multi_object_mask = np.zeros((binary_masks.shape[1], binary_masks.shape[2]))
     for i, binary_mask in enumerate(binary_masks):
         non_zero_idx = binary_mask == 1
-        multi_class_mask[non_zero_idx] = i + 1
+        multi_object_mask[non_zero_idx] = i + 1
 
-    return multi_class_mask
+    return multi_object_mask
 
 
 def mask_to_bounding_box(mask):
@@ -203,7 +203,7 @@ def polygon_to_mask(polygon, shape):
     """
 
     # Convert numpy.array to list of tuple pairs of X and Y coordinates
-    points = np.array(polygon).reshape(-1).reshape(-1, 2)
+    points = np.array(polygon).reshape(-1, 2)
     points = [(point[0], point[1]) for point in points]
     mask = Image.new('L', (shape[1], shape[0]), 0)
 
