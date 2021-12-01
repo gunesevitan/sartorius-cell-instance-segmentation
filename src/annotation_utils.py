@@ -188,27 +188,29 @@ def mask_to_polygon(mask):
     return segmentations, polygons
 
 
-def polygon_to_mask(polygon, shape):
+def polygon_to_mask(polygons, shape):
 
     """
     Get binary mask from a polygon
 
     Parameters
     ----------
-    polygon [list of shape (n_points)]: Polygon
+    polygons [list of lists (n_points * 2)]: Polygons
 
     Returns
     -------
     mask [numpy.ndarray of shape (height, width)]: 2d binary mask
     """
 
-    # Convert numpy.array to list of tuple pairs of X and Y coordinates
-    points = np.array(polygon).reshape(-1, 2)
-    points = [(point[0], point[1]) for point in points]
     mask = Image.new('L', (shape[1], shape[0]), 0)
 
-    # Draw mask from the polygon
-    ImageDraw.Draw(mask).polygon(points, outline=1, fill=1)
-    mask = np.array(mask).astype(np.uint8)
+    for polygon in polygons:
+        # Convert list of points to tuple pairs of X and Y coordinates
+        points = np.array(polygon).reshape(-1, 2)
+        points = [(point[0], point[1]) for point in points]
 
+        # Draw mask from the polygon
+        ImageDraw.Draw(mask).polygon(points, outline=1, fill=1)
+
+    mask = np.array(mask).astype(np.uint8)
     return mask
