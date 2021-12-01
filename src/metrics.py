@@ -2,6 +2,8 @@ import numpy as np
 import numba
 import pycocotools.mask as mask_util
 
+import annotation_utils
+
 
 @numba.jit(nopython=True, parallel=True)
 def slow_intersection_over_union(ground_truth_mask, prediction_mask):
@@ -119,7 +121,7 @@ def get_average_precision(ground_truth_masks, prediction_masks, thresholds=(0.50
     return average_precision
 
 
-def get_average_precision_detectron(ground_truth_masks, prediction_masks, thresholds=(0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95), verbose=False):
+def get_average_precision_detectron(ground_truth_masks, prediction_masks, ground_truth_mask_format='bitmask', thresholds=(0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95), verbose=False):
 
     """
     Predict given image with given model, filter predicted boxes based on IoU threshold and confidence scores
@@ -138,9 +140,13 @@ def get_average_precision_detectron(ground_truth_masks, prediction_masks, thresh
 
     print('asdADSADSADASDASDADASD\n\n')
     prediction_masks = [mask_util.encode(np.asarray(mask, order='F')) for mask in prediction_masks]
-    ground_truth_masks = list(map(lambda x: x['segmentation'], ground_truth_masks))
-    print(ground_truth_masks)
-    exit()
+
+    if ground_truth_mask_format == 'bitmask':
+        ground_truth_masks = list(map(lambda x: x['segmentation'], ground_truth_masks))
+    else:
+        ground_truth_masks = list(map(lambda x: annotation_utils.polygon_to_mask(x['segmentation'], shape=(520, 704)), ground_truth_masks))
+        ground_truth_masks = [mask_util.encode(np.asarray(mask, order='F')) for mask in ground_truth_masks]
+
     ious = mask_util.iou(prediction_masks, ground_truth_masks, [0] * len(ground_truth_masks))
 
     precisions = []

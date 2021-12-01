@@ -31,11 +31,14 @@ def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=F
     annotation_column = 'annotation' if fill_holes is False else 'annotation_filled'
 
     if source == 'competition':
+
         decoded_mask = annotation_utils.decode_rle_mask(row[annotation_column], shape=(row['height'], row['width']), fill_holes=False)
         decoded_mask = np.asfortranarray(decoded_mask)
         coco_encoded_mask = mask_utils.encode(decoded_mask)
         coco_encoded_mask['counts'] = coco_encoded_mask['counts'].decode('utf-8')
+
     elif source == 'livecell':
+
         if segmentation_format == 'bitmask':
             coco_encoded_mask = {'size': [520, 704], 'counts': row[annotation_column]}
         elif segmentation_format == 'polygon':
@@ -61,6 +64,7 @@ def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=F
         segmentations, polygons = annotation_utils.mask_to_polygon(decoded_mask)
 
         if len(segmentations) > 0:
+
             multi_polygon = MultiPolygon(polygons)
             x, y, x_max, y_max = multi_polygon.bounds
             width = x_max - x
