@@ -72,7 +72,7 @@ class EvalLossHook(HookBase):
                 eta = datetime.timedelta(seconds=int(total_seconds_per_img * (total - idx - 1)))
                 log_every_n_seconds(
                     logging.INFO,
-                    f'Loss on Validation  done {idx + 1}/{total}. {seconds_per_img:.4f} s / img. ETA={eta}',
+                    f'Loss on Validation done {idx + 1}/{total}. {seconds_per_img:.4f} s / img. ETA={eta}',
                     n=5
                 )
 
@@ -81,6 +81,7 @@ class EvalLossHook(HookBase):
                 losses[k].append(v)
 
         eval_losses = {k: np.mean(v) for k, v in losses.items()}
+        comm.synchronize()
         return eval_losses
 
     def after_step(self):
@@ -89,7 +90,6 @@ class EvalLossHook(HookBase):
         is_final = next_iter == self.trainer.max_iter
         if is_final or (self._period > 0 and next_iter % self._period == 0):
             eval_losses = self._do_loss_eval()
-
             for eval_loss, loss_value in eval_losses.items():
                 self.trainer.storage.put_scalar(f'val_{eval_loss}', loss_value)
 
@@ -263,10 +263,11 @@ class TopKAveragerCheckpointer(HookBase):
 
 class InstanceSegmentationEvaluator(DatasetEvaluator):
 
-    def __init__(self, dataset_name):
+    def __init__(self, dataset_name, segmentation_format='bitmask'):
 
         dataset = DatasetCatalog.get(dataset_name)
         self.annotations_cache = {item['image_id']: item['annotations'] for item in dataset}
+        self.segmentation_format = segmentation_format
 
     def reset(self):
 
@@ -277,14 +278,21 @@ class InstanceSegmentationEvaluator(DatasetEvaluator):
 
         for input_, output in zip(inputs, outputs):
             if len(output['instances']) == 0:
+                # Set 0 mAP when there are no objects predicted by model
                 self.scores.append(0)
                 annotation = self.annotations_cache[input_['image_id']]
                 label = np.unique(list(map(lambda x: x['category_id'], annotation)))[0]
                 self.labels.append(label)
             else:
+                # Calculate mAP with predicted objects
                 annotation = self.annotations_cache[input_['image_id']]
                 prediction_masks = output['instances'].pred_masks.cpu().numpy()
-                average_precision = metrics.get_average_precision_detectron(annotation, prediction_masks, verbose=False)
+                average_precision = metrics.get_average_precision_detectron(
+                    ground_truth_masks=annotation,
+                    prediction_masks=prediction_masks,
+                    ground_truth_mask_format=self.segmentation_format,
+                    verbose=False
+                )
                 self.scores.append(average_precision)
                 label = np.unique(list(map(lambda x: x['category_id'], annotation)))[0]
                 self.labels.append(label)
