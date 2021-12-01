@@ -348,7 +348,7 @@ class InstanceSegmentationTrainer(DefaultTrainer):
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         if output_folder is None:
             output_folder = f'{cfg.OUTPUT_DIR}/evaluation'
-        return InstanceSegmentationEvaluator(dataset_name=dataset_name)
+        return InstanceSegmentationEvaluator(dataset_name=dataset_name, segmentation_format='polygon')
 
     @classmethod
     def build_lr_scheduler(cls, cfg, optimizer):
