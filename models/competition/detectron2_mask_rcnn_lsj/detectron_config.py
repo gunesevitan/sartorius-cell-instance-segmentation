@@ -56,7 +56,7 @@ cfg = {
             '_target_': detectron2.data.build_detection_test_loader
         },
         'evaluator': {
-            'dataset_name': '..test.dataset.names',
+            'dataset_name': 'val_clean_stratified_fold1',
             '_target_': detectron_utils.InstanceSegmentationEvaluator
         }
     },
