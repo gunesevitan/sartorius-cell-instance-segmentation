@@ -22,6 +22,7 @@ cfg = {
             },
             'mapper': {
                 'is_train': True,
+                'instance_mask_format': 'bitmask',
                 'augmentations': [
                     {'min_scale': 0.1, 'max_scale': 2.0, 'target_height': 1024, 'target_width': 1024, '_target_': detectron2.data.transforms.augmentation_impl.ResizeScale},
                     {'crop_size': [1024, 1024], '_target_': detectron2.data.transforms.augmentation_impl.FixedSizeCrop},
@@ -44,6 +45,7 @@ cfg = {
             },
             'mapper': {
                 'is_train': False,
+                'instance_mask_format': 'bitmask',
                 'augmentation': [
                     {'short_edge_length': 800, 'max_size': 1333, '_target_': detectron2.data.transforms.augmentation_impl.ResizeShortestEdge}
                 ],
@@ -112,12 +114,12 @@ cfg = {
             },
             'batch_size_per_image': 256,
             'positive_fraction': 0.5,
-            'pre_nms_top_k': [2000, 1000],
-            'post_nms_top_k': [1000, 1000],
+            'pre_nms_topk': [2000, 1000],
+            'post_nms_topk': [1000, 1000],
             'nms_thresh': 0.7,
             '_target_': detectron2.modeling.proposal_generator.rpn.RPN
         },
-        'roi_head': {
+        'roi_heads': {
             'num_classes': 3,
             'batch_size_per_image': 512,
             'positive_fraction': 0.25,
@@ -187,7 +189,7 @@ cfg = {
     'lr_multiplier': {
         'scheduler': {
             'values': [0.1, 0.01, 0.001],
-            'milestones': [1200, 2400],
+            'milestones': [1200, 2400, 3600],
             'num_updates': None,
             '_target_': fvcore.common.param_scheduler.MultiStepParamScheduler
         },
