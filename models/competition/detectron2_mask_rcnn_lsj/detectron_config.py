@@ -214,7 +214,7 @@ cfg = {
             'max_to_keep': 100
         },
         'eval_period': 121,
-        'log_period': 20,
+        'log_period': 1,
         'device': 'cuda'
     }
 }
