@@ -116,19 +116,25 @@ if __name__ == '__main__':
         detectron_config = model_zoo.get_config(trainer_config['MODEL']['model_zoo_path'])
         detectron_config.update(cfg)
 
-    if args.mode == 'eval':
-        detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['eval_model_path']
+    if trainer_config['MODEL']['model_zoo_path'].endswith('.yaml'):
+        if args.mode == 'eval':
+            detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['eval_model_path']
 
-    trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
-    trainer.resume_or_load(resume=False)
+    if trainer_config['MODEL']['model_zoo_path'].endswith('.yaml'):
 
-    if args.mode == 'train':
-        trainer.train()
-    elif args.mode == 'eval':
-        model = trainer.build_model(detectron_config)
-        DetectionCheckpointer(
-            model=model,
-            save_dir=detectron_config.OUTPUT_DIR
-        ).resume_or_load(detectron_config.MODEL.WEIGHTS, resume=False)
-        res = trainer.test(cfg=detectron_config, model=model)
+        trainer = detectron_utils.InstanceSegmentationTrainer(detectron_config)
+        trainer.resume_or_load(resume=False)
 
+        if args.mode == 'train':
+            trainer.train()
+        elif args.mode == 'eval':
+            model = trainer.build_model(detectron_config)
+            DetectionCheckpointer(
+                model=model,
+                save_dir=detectron_config.OUTPUT_DIR
+            ).resume_or_load(detectron_config.MODEL.WEIGHTS, resume=False)
+            trainer.test(cfg=detectron_config, model=model)
+
+    elif trainer_config['MODEL']['model_zoo_path'].endswith('.py'):
+
+        train(detectron_config)
