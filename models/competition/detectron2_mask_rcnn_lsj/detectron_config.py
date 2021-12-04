@@ -46,7 +46,7 @@ cfg = {
             'mapper': {
                 'is_train': False,
                 'instance_mask_format': 'bitmask',
-                'augmentation': [
+                'augmentations': [
                     {'short_edge_length': 800, 'max_size': 1333, '_target_': detectron2.data.transforms.augmentation_impl.ResizeShortestEdge}
                 ],
                 'image_format': '${...train.mapper.image_format}',
