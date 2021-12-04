@@ -46,7 +46,7 @@ cfg = {
             'mapper': {
                 'is_train': False,
                 'instance_mask_format': 'bitmask',
-                'augmentation': [
+                'augmentations': [
                     {'short_edge_length': 800, 'max_size': 1333, '_target_': detectron2.data.transforms.augmentation_impl.ResizeShortestEdge}
                 ],
                 'image_format': '${...train.mapper.image_format}',
@@ -214,7 +214,7 @@ cfg = {
             'max_to_keep': 100
         },
         'eval_period': 121,
-        'log_period': 20,
+        'log_period': 1,
         'device': 'cuda'
     }
 }
