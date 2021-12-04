@@ -116,13 +116,6 @@ if __name__ == '__main__':
         detectron_config = model_zoo.get_config(trainer_config['MODEL']['model_zoo_path'])
         detectron_config.update(cfg)
 
-
-
-
-
-    exit()
-
-
     if args.mode == 'eval':
         detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['eval_model_path']
 
