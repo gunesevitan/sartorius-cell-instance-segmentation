@@ -1,0 +1,9 @@
+DATASET:
+  training_set_name: train_clean_stratified_fold1
+  test_set_name: val_clean_stratified_fold1
+  image_root: ../data
+
+MODEL:
+  model_zoo_path: new_baselines/mask_rcnn_R_101_FPN_400ep_LSJ.py
+  pretrained_model_path: new_baselines/mask_rcnn_R_101_FPN_400ep_LSJ.py
+  eval_model_path: null
