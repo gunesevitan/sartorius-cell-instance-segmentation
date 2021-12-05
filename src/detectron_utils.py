@@ -336,7 +336,7 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             topk_averager_checkpointer = TopKAveragerCheckpointer(
                 eval_period=self.cfg.TEST.EVAL_PERIOD,
                 checkpointer=self.checkpointer,
-                val_metric='val_total_loss',
+                val_metric='val_loss_total',
                 mode='min',
                 k=3
             )
@@ -348,7 +348,7 @@ class InstanceSegmentationTrainer(DefaultTrainer):
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         if output_folder is None:
             output_folder = f'{cfg.OUTPUT_DIR}/evaluation'
-        return InstanceSegmentationEvaluator(dataset_name=dataset_name, segmentation_format='polygon')
+        return InstanceSegmentationEvaluator(dataset_name=dataset_name, segmentation_format='bitmask')
 
     @classmethod
     def build_lr_scheduler(cls, cfg, optimizer):
