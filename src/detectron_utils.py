@@ -340,7 +340,7 @@ class InstanceSegmentationTrainer(DefaultTrainer):
                 mode='min',
                 k=3
             )
-            hooks.insert(-1, topk_averager_checkpointer)
+            hooks.insert(-1, best_checkpointer)
 
         return hooks
 
