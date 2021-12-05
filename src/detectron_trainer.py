@@ -108,6 +108,7 @@ if __name__ == '__main__':
             detectron_config.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(trainer_config['MODEL']['pretrained_model_path'])
         elif trainer_config['MODEL']['pretrained_model_path'].split('.')[-1] == 'pth':
             detectron_config.MODEL.WEIGHTS = trainer_config['MODEL']['pretrained_model_path']
+
         detectron_config.merge_from_file(f'{args.config_path}/detectron_config.yaml')
 
     # New python configs are loaded, updated and instantiated
