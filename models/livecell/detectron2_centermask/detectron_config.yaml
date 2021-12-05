@@ -1,0 +1,176 @@
+VERSION: 2
+
+MODEL:
+  PIXEL_MEAN:
+    - 128.01926491911536
+    - 128.01926491911536
+    - 128.01926491911536
+  PIXEL_STD:
+    - 11.172353318295597
+    - 11.172353318295597
+    - 11.172353318295597
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    IN_FEATURES:
+      - stage3
+      - stage4
+      - stage5
+    OUT_CHANNELS: 256
+    NORM: ''
+  PROPOSAL_GENERATOR:
+    MIN_SIZE: 0
+  ROI_HEADS:
+    NAME: CenterROIHeads
+    NUM_CLASSES: 8
+    IN_FEATURES:
+      - p3
+      - p4
+      - p5
+    IOU_THRESHOLDS:
+      - 0.5
+    IOU_LABELS:
+      - 0
+      - 1
+    BATCH_SIZE_PER_IMAGE: 128
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH_TEST: 0.5
+    NMS_THRESH_TEST: 0.5
+  ROI_MASK_HEAD:
+    NAME: SpatialAttentionMaskHead
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    NUM_CONV: 4
+    CONV_DIM: 256
+    NORM: ''
+    CLS_AGNOSTIC_MASK: False
+    POOLER_TYPE: ROIAlignV2
+    ASSIGN_CRITERION: ratio
+  FCOS:
+    NUM_CLASSES: 80
+    IN_FEATURES:
+      - p3
+      - p4
+      - p5
+      - p6
+      - p7
+    FPN_STRIDES:
+      - 8
+      - 16
+      - 32
+      - 64
+      - 128
+    PRIOR_PROB: 0.01
+    INFERENCE_TH_TRAIN: 0.5
+    INFERENCE_TH_TEST: 0.5
+    NMS_TH: 0.6
+    PRE_NMS_TOPK_TRAIN: 1000
+    PRE_NMS_TOPK_TEST: 1000
+    POST_NMS_TOPK_TRAIN: 100
+    POST_NMS_TOPK_TEST: 100
+    TOP_LEVELS : 2
+    NORM: GN
+    USE_SCALE: True
+    THRESH_WITH_CTR: False
+    LOSS_ALPHA: 0.25
+    LOSS_GAMMA: 2.0
+    SIZES_OF_INTEREST:
+      - 64
+      - 128
+      - 256
+      - 512
+    USE_RELU: True
+    USE_DEFORMABLE: False
+    NUM_CLS_CONVS: 4
+    NUM_BOX_CONVS: 4
+    NUM_SHARE_CONVS: 0
+    CENTER_SAMPLE: True
+    POS_RADIUS: 1.5
+    LOC_LOSS_TYPE: giou
+  ROI_MASKIOU_HEAD:
+    ROI_MASKIOU_HEAD.NAME: MaskIoUHead
+    ROI_MASKIOU_HEAD.CONV_DIM: 256
+    ROI_MASKIOU_HEAD.NUM_CONV: 4
+  ROI_MASK_HEAD.ASSIGN_CRITERION: area
+  MASKIOU_ON: True
+  MASK_ON: True
+  MASKIOU_LOSS_WEIGHT: 1.0
+
+INPUT:
+  MIN_SIZE_TRAIN:
+    - 480
+    - 512
+    - 544
+    - 576
+    - 608
+    - 640
+    - 672
+    - 704
+    - 736
+    - 768
+    - 800
+  MIN_SIZE_TRAIN_SAMPLING: choice
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MAX_SIZE_TEST: 1333
+  RANDOM_FLIP: horizontal
+  FORMAT: BGR
+  MASK_FORMAT: bitmask
+
+DATASETS:
+  TRAIN:
+    - livecell
+  TEST: []
+
+DATALOADER:
+  NUM_WORKERS: 4
+  ASPECT_RATIO_GROUPING: True
+  SAMPLER_TRAIN: TrainingSampler
+  REPEAT_THRESHOLD: 0.0
+  FILTER_EMPTY_ANNOTATIONS: True
+
+SOLVER:
+  LR_SCHEDULER_NAME: WarmupMultiStepLR
+  MAX_ITER: 131000
+  BASE_LR: 0.001
+  MOMENTUM: 0.9
+  NESTEROV: False
+  WEIGHT_DECAY: 0.00001
+  WEIGHT_DECAY_NORM: 0.0
+  GAMMA: 0.5
+  STEPS: [5000, 10000, 15000, 20000, 25000, 50000, 75000, 100000, 125000]
+  WARMUP_FACTOR: 0.0
+  WARMUP_ITERS: 0
+  WARMUP_METHOD: linear
+  CHECKPOINT_PERIOD: 13100
+  IMS_PER_BATCH: 4
+  CLIP_GRADIENTS:
+    ENABLED: False
+    CLIP_TYPE: value
+    CLIP_VALUE: 1.0
+    NORM_TYPE: 2.0
+  AMP:
+    ENABLED: True
+
+TEST:
+  EVAL_PERIOD: 131000
+  DETECTIONS_PER_IMAGE: 100
+  AUG:
+    ENABLED: False
+    MIN_SIZES:
+      - 400
+      - 500
+      - 600
+      - 700
+      - 800
+      - 900
+      - 1000
+      - 1100
+      - 1200
+    MAX_SIZE: 4000
+    FLIP: True
+
+OUTPUT_DIR: ../models/livecell/detectron2_centermask
+SEED: 42
+CUDNN_BENCHMARK: False
+VIS_PERIOD: 0
