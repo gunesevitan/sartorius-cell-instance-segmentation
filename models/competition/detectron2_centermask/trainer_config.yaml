@@ -4,6 +4,6 @@ DATASET:
   image_root: ../data
 
 MODEL:
-  model_zoo_path: ../venv/lib/python3.8/site-packages/centermask2/configs/centermask/centermask_V_99_eSE_dcn_FPN_ms_3x.yaml
-  pretrained_model_path: ../venv/lib/python3.8/site-packages/centermask2/configs/centermask/centermask_V_99_eSE_dcn_FPN_ms_3x.yaml
+  model_zoo_path: ../venv/lib/python3.8/site-packages/centermask2/configs/centermask/centermask_V_57_eSE_FPN_ms_3x.yaml 
+  pretrained_model_path: ../venv/lib/python3.8/site-packages/centermask2/configs/centermask/centermask_V_57_eSE_FPN_ms_3x.yaml 
   eval_model_path: null

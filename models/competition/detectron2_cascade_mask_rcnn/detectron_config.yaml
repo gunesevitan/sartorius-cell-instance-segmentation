@@ -18,7 +18,7 @@ MODEL:
       - res4
       - res5
     OUT_CHANNELS: 256
-    NORM: GN
+    NORM: ''
   PROPOSAL_GENERATOR:
     MIN_SIZE: 0
   RPN:
@@ -47,7 +47,7 @@ MODEL:
     POST_NMS_TOPK_TEST: 1000
     NMS_THRESH: 0.7
   ROI_HEADS:
-    NAME: StandardROIHeads
+    NAME: CascadeROIHeads
     NUM_CLASSES: 3
     IN_FEATURES:
       - p2
@@ -66,16 +66,16 @@ MODEL:
   ROI_BOX_HEAD:
     BBOX_REG_LOSS_TYPE: ciou
     BBOX_REG_LOSS_WEIGHT: 1.0
-    NORM: GN
+    NORM: ''
     CLS_AGNOSTIC_BBOX_REG: True
-    TRAIN_ON_PRED_BOXES: False
+    TRAIN_ON_PRED_BOXES: True
   ROI_MASK_HEAD:
     NAME: MaskRCNNConvUpsampleHead
     POOLER_RESOLUTION: 14
     POOLER_SAMPLING_RATIO: 0
     NUM_CONV: 4
     CONV_DIM: 256
-    NORM: GN
+    NORM: ''
     CLS_AGNOSTIC_MASK: False
 
 INPUT:
