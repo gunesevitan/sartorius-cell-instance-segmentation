@@ -1,19 +1,13 @@
-import sys
-sys.path.append('..')
 import yaml
 import argparse
-from detectron2.config import LazyConfig, get_cfg, instantiate
-
+from detectron2.config import get_cfg, instantiate
 from detectron2.data import DatasetCatalog
 from detectron2.data.datasets import register_coco_instances
 from detectron2.engine import (
     AMPTrainer,
     SimpleTrainer,
-    default_argument_parser,
-    default_setup,
     default_writers,
     hooks,
-    launch,
 )
 from detectron2.engine.defaults import create_ddp_model
 from detectron2.checkpoint import DetectionCheckpointer
@@ -23,7 +17,6 @@ from detectron2.utils import comm
 
 import settings
 import detectron_utils
-from models.competition.detectron2_mask_rcnn_lsj.detectron_config import cfg
 
 
 def test(cfg, model):
@@ -115,7 +108,6 @@ if __name__ == '__main__':
     elif trainer_config['MODEL']['model_zoo_path'].endswith('.py'):
 
         detectron_config = model_zoo.get_config(trainer_config['MODEL']['model_zoo_path'])
-        detectron_config.update(cfg)
 
     if trainer_config['MODEL']['model_zoo_path'].endswith('.yaml'):
         if args.mode == 'eval':
