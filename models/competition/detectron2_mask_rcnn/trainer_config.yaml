@@ -7,3 +7,17 @@ MODEL:
   model_zoo_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
   pretrained_model_path: ../models/livecell/detectron2_mask_rcnn/livecell_mask_rcnn_epoch10.pth
   eval_model_path: null
+
+POST_PROCESSING:
+  nms_iou_thresholds:
+    0: 0.6
+    1: 0.5
+    2: 0.5
+  score_thresholds:
+    0: 0.7
+    1: 0.5
+    2: 0.5
+  area_thresholds:
+    0: 30
+    1: 30
+    2: 30
