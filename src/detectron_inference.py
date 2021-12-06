@@ -11,11 +11,11 @@ import detectron2
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
-import ensemble_boxes
 
 import settings
 import annotation_utils
 import metrics
+import ensemble_boxes_nms
 
 
 def load_detectron2_models(model_directory):
@@ -74,7 +74,7 @@ def post_process(predictions, box_height_scale, box_width_scale, nms_iou_thresho
         if verbose:
             print(f'{len(prediction["scores"])} objects are predicted with {np.mean(prediction["scores"]):.4f} average score')
 
-    boxes, scores, labels, masks = ensemble_boxes.nms(
+    boxes, scores, labels, masks = ensemble_boxes_nms.nms(
         boxes=boxes_list,
         scores=scores_list,
         labels=labels_list,
