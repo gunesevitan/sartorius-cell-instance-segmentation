@@ -138,7 +138,6 @@ def get_average_precision_detectron(ground_truth_masks, prediction_masks, ground
     average_precision (float): Average precision score of IoU hit matrix (0.0 <= average_precision <= 1.0)
     """
 
-    print('asdADSADSADASDASDADASD\n\n')
     prediction_masks = [mask_util.encode(np.asarray(mask, order='F')) for mask in prediction_masks]
 
     if ground_truth_mask_format == 'bitmask':
