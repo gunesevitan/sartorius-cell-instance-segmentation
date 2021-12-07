@@ -117,7 +117,7 @@ if __name__ == '__main__':
     df = df.loc[~df['annotation'].isnull()]
     labels = df.groupby('id')['cell_type'].first().values
     folds = df.groupby('id')['stratified_fold'].first().values
-    df = df.groupby('id')['annotation_filled'].agg(lambda x: list(x)).reset_index()
+    df = df.groupby('id')['annotation'].agg(lambda x: list(x)).reset_index()
     df['label'] = labels
     df['fold'] = np.uint8(folds)
     print(f'Training Set Shape: {df.shape} - Memory Usage: {df.memory_usage().sum() / 1024 ** 2:.2f} MB')
@@ -141,7 +141,7 @@ if __name__ == '__main__':
             )
             ground_truth_masks = np.stack([
                 annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=(520, 704), fill_holes=False, is_coco_encoded=False)
-                for rle_mask in df.loc[idx, 'annotation_filled']
+                for rle_mask in df.loc[idx, 'annotation']
             ])
 
             used_pixels = np.zeros(image.shape[:2], dtype=int)
