@@ -157,7 +157,8 @@ if __name__ == '__main__':
                 if np.sum(prediction_mask) >= post_processing_parameters['area_thresholds'][cell_type]:
                     used_pixels += prediction_mask
                     non_overlapping_prediction_masks.append(prediction_mask)
-            non_overlapping_prediction_masks = np.stack(non_overlapping_prediction_masks)
+            non_overlapping_prediction_masks = np.uint8(np.stack(non_overlapping_prediction_masks))
+            non_overlapping_prediction_masks = np.moveaxis(non_overlapping_prediction_masks, 0, -1)
 
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
