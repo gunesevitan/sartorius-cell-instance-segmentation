@@ -119,7 +119,7 @@ if __name__ == '__main__':
     parser.add_argument('model_directory', type=str)
     args = parser.parse_args()
 
-    model_name = args.model_directory.split('/')[-1]
+    model_name = args.model_directory.split('/')
     models = load_detectron2_models(args.model_directory)
     post_processing_parameters = yaml.load(open(f'{args.model_directory}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)['POST_PROCESSING']
 
@@ -154,6 +154,13 @@ if __name__ == '__main__':
                 annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=(520, 704), fill_holes=False, is_coco_encoded=False)
                 for rle_mask in df.loc[idx, 'annotation_filled']
             ])
+
+            used_pixels = np.zeros(image.shape[:2], dtype=int)
+            for prediction_mask_idx, prediction_mask in enumerate(prediction_masks):
+                prediction_mask = prediction_mask * (1 - used_pixels)
+                used_pixels += prediction_mask
+                prediction_masks[prediction_mask_idx] = prediction_mask
+
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=prediction_masks,
