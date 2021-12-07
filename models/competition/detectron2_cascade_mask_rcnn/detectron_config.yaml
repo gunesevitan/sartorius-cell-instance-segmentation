@@ -106,9 +106,9 @@ INPUT:
 
 DATASETS:
   TRAIN:
-    - train_clean_stratified_fold1
+    - train_clean_stratified_fold5
   TEST:
-    - val_clean_stratified_fold1
+    - val_clean_stratified_fold5
 
 DATALOADER:
   NUM_WORKERS: 4
@@ -144,7 +144,7 @@ TEST:
   EVAL_PERIOD: 121
   DETECTIONS_PER_IMAGE: 1000
   AUG:
-    ENABLED: False
+    ENABLED: True
     MIN_SIZES:
       - 400
       - 500
