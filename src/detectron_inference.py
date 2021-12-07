@@ -100,16 +100,6 @@ def post_process(predictions, box_height_scale, box_width_scale, nms_iou_thresho
     if verbose:
         print(f'{len(scores)} objects are kept after applying {score_threshold} score threshold with {np.mean(scores):.4f} average score')
 
-    mask_areas = masks.sum(axis=(1, 2))
-    area_condition = mask_areas > area_threshold
-    boxes = boxes[area_condition]
-    scores = scores[area_condition]
-    masks = masks[area_condition]
-    labels = labels[area_condition]
-
-    if verbose:
-        print(f'{len(scores)} objects are kept after applying {area_threshold} area threshold with {np.mean(scores):.4f} average score')
-
     return boxes, scores, labels, masks
 
 
