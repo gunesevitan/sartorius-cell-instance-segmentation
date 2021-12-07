@@ -22,7 +22,7 @@ def load_detectron2_models(model_directory):
 
     print(f'Loading Detectron2 models from {model_directory}')
     models = {}
-    model_names = sorted(glob(f'{model_directory}/*.pth'))[:1]
+    model_names = sorted(glob(f'{model_directory}/*.pth'))
 
     for fold, weights_path in enumerate(model_names, start=1):
 
@@ -148,7 +148,7 @@ if __name__ == '__main__':
                 nms_iou_threshold=post_processing_parameters['nms_iou_thresholds'][cell_type],
                 score_threshold=post_processing_parameters['score_thresholds'][cell_type],
                 area_threshold=post_processing_parameters['area_thresholds'][cell_type],
-                verbose=True
+                verbose=False
             )
             ground_truth_masks = np.stack([
                 annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=(520, 704), fill_holes=False, is_coco_encoded=False)
@@ -165,6 +165,7 @@ if __name__ == '__main__':
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=prediction_masks,
                 ground_truth_mask_format=None,
+                verbose=False
             )
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 

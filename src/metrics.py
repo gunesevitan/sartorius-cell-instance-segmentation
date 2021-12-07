@@ -139,6 +139,7 @@ def get_average_precision_detectron(ground_truth_masks, prediction_masks, ground
     """
 
     prediction_masks = [mask_util.encode(np.asarray(mask, order='F')) for mask in prediction_masks]
+
     if ground_truth_mask_format == 'bitmask':
         ground_truth_masks = list(map(lambda x: x['segmentation'], ground_truth_masks))
     elif ground_truth_mask_format == 'polygon':
