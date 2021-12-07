@@ -18,7 +18,7 @@ MODEL:
       - res4
       - res5
     OUT_CHANNELS: 256
-    NORM: GN
+    NORM: ''
   PROPOSAL_GENERATOR:
     MIN_SIZE: 0
   RPN:
@@ -66,7 +66,7 @@ MODEL:
   ROI_BOX_HEAD:
     BBOX_REG_LOSS_TYPE: ciou
     BBOX_REG_LOSS_WEIGHT: 1.0
-    NORM: GN
+    NORM: ''
     CLS_AGNOSTIC_BBOX_REG: True
     TRAIN_ON_PRED_BOXES: False
   ROI_BOX_CASCADE_HEAD:
@@ -80,7 +80,7 @@ MODEL:
     POOLER_SAMPLING_RATIO: 0
     NUM_CONV: 4
     CONV_DIM: 256
-    NORM: GN
+    NORM: ''
     CLS_AGNOSTIC_MASK: False
 
 INPUT:
@@ -106,9 +106,9 @@ INPUT:
 
 DATASETS:
   TRAIN:
-    - train_clean_stratified_fold1
+    - train_clean_stratified_fold5
   TEST:
-    - val_clean_stratified_fold1
+    - val_clean_stratified_fold5
 
 DATALOADER:
   NUM_WORKERS: 4
@@ -144,7 +144,7 @@ TEST:
   EVAL_PERIOD: 121
   DETECTIONS_PER_IMAGE: 1000
   AUG:
-    ENABLED: False
+    ENABLED: True
     MIN_SIZES:
       - 400
       - 500
