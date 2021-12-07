@@ -52,7 +52,7 @@ def predict_single_image(image, model):
     return prediction
 
 
-def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=0.5, score_threshold=0.5, area_threshold=30, verbose=False):
+def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=0.5, score_threshold=0.5, verbose=False):
 
     boxes_list = []
     scores_list = []
@@ -137,7 +137,6 @@ if __name__ == '__main__':
                 box_width_scale=image.shape[1],
                 nms_iou_threshold=post_processing_parameters['nms_iou_thresholds'][cell_type],
                 score_threshold=post_processing_parameters['score_thresholds'][cell_type],
-                area_threshold=post_processing_parameters['area_thresholds'][cell_type],
                 verbose=False
             )
             ground_truth_masks = np.stack([
@@ -148,8 +147,9 @@ if __name__ == '__main__':
             used_pixels = np.zeros(image.shape[:2], dtype=int)
             for prediction_mask_idx, prediction_mask in enumerate(prediction_masks):
                 prediction_mask = prediction_mask * (1 - used_pixels)
-                used_pixels += prediction_mask
-                prediction_masks[prediction_mask_idx] = prediction_mask
+                if np.sum(prediction_mask) >= post_processing_parameters['area_thresholds'][cell_type]:
+                    used_pixels += prediction_mask
+                    prediction_masks[prediction_mask_idx] = prediction_mask
 
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
