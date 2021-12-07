@@ -6,8 +6,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mode
 import cv2
-import torch
-import detectron2
 from detectron2 import model_zoo
 from detectron2.engine import DefaultPredictor
 from detectron2.config import get_cfg
@@ -22,11 +20,11 @@ def load_detectron2_models(model_directory):
 
     print(f'Loading Detectron2 models from {model_directory}')
     models = {}
-    model_names = sorted(glob(f'{model_directory}/*.pth'))
+    model_names = sorted(glob(f'{model_directory}/*.pth'))[:1]
+    trainer_config = yaml.load(open(f'{model_directory}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)
 
     for fold, weights_path in enumerate(model_names, start=1):
 
-        trainer_config = yaml.load(open(f'{model_directory}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)
         detectron_config = get_cfg()
         detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
         detectron_config.MODEL.WEIGHTS = weights_path
@@ -52,15 +50,17 @@ def predict_single_image(image, model):
     return prediction
 
 
-def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=0.5, score_threshold=0.5, verbose=False):
+def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=None, score_threshold=None, verbose=False):
 
     boxes_list = []
     scores_list = []
     labels_list = []
     masks_list = []
 
+    # Storing predictions of multiple models into lists
     for prediction in predictions:
 
+        # Scale box coordinates between 0 and 1
         prediction['boxes'][:, 0] /= box_width_scale
         prediction['boxes'][:, 1] /= box_height_scale
         prediction['boxes'][:, 2] /= box_width_scale
@@ -74,6 +74,7 @@ def post_process(predictions, box_height_scale, box_width_scale, nms_iou_thresho
         if verbose:
             print(f'{len(prediction["scores"])} objects are predicted with {np.mean(prediction["scores"]):.4f} average score')
 
+    # Filtering out overlapping boxes with nms
     boxes, scores, labels, masks = ensemble_boxes_nms.nms(
         boxes=boxes_list,
         scores=scores_list,
@@ -86,11 +87,13 @@ def post_process(predictions, box_height_scale, box_width_scale, nms_iou_thresho
     if verbose:
         print(f'{len(scores)} objects are kept after applying {nms_iou_threshold} nms iou threshold with {np.mean(scores):.4f} average score')
 
+    # Rescaling box coordinates between image height and width
     boxes[:, 0] *= box_width_scale
     boxes[:, 1] *= box_height_scale
     boxes[:, 2] *= box_width_scale
     boxes[:, 3] *= box_height_scale
 
+    # Filtering out boxes based on confidence scores
     score_condition = scores >= score_threshold
     boxes = boxes[score_condition]
     scores = scores[score_condition]
@@ -129,6 +132,7 @@ if __name__ == '__main__':
 
             image = cv2.imread(f'{settings.DATA_PATH}/train_images/{df.loc[idx, "id"]}.png')
             prediction = predict_single_image(image=image, model=models[fold])
+            # Select cell type as most predicted label
             cell_type = mode(prediction['labels'])[0][0]
 
             prediction_boxes, prediction_scores, prediction_labels, prediction_masks = post_process(
@@ -144,16 +148,20 @@ if __name__ == '__main__':
                 for rle_mask in df.loc[idx, 'annotation_filled']
             ])
 
+            # Simulating non-overlapping mask evaluation
+            non_overlapping_prediction_masks = []
             used_pixels = np.zeros(image.shape[:2], dtype=int)
             for prediction_mask_idx, prediction_mask in enumerate(prediction_masks):
                 prediction_mask = prediction_mask * (1 - used_pixels)
+                # Filtering out small objects after removing overlapping masks
                 if np.sum(prediction_mask) >= post_processing_parameters['area_thresholds'][cell_type]:
                     used_pixels += prediction_mask
-                    prediction_masks[prediction_mask_idx] = prediction_mask
+                    non_overlapping_prediction_masks.append(prediction_mask)
+            non_overlapping_prediction_masks = np.stack(non_overlapping_prediction_masks)
 
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
-                prediction_masks=prediction_masks,
+                prediction_masks=non_overlapping_prediction_masks,
                 ground_truth_mask_format=None,
                 verbose=False
             )
@@ -171,6 +179,6 @@ if __name__ == '__main__':
         'model': model_name,
         'post_processing_parameters': post_processing_parameters,
         'cell_map_scores': oof_score_by_cell_types,
-        'global_map_score':oof_score
+        'global_map_score': oof_score
     }
     print(summary)
