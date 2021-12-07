@@ -157,14 +157,13 @@ if __name__ == '__main__':
                 if np.sum(prediction_mask) >= post_processing_parameters['area_thresholds'][cell_type]:
                     used_pixels += prediction_mask
                     non_overlapping_prediction_masks.append(prediction_mask)
-            non_overlapping_prediction_masks = np.uint8(np.stack(non_overlapping_prediction_masks))
-            non_overlapping_prediction_masks = np.moveaxis(non_overlapping_prediction_masks, 0, -1)
-
+            non_overlapping_prediction_masks = np.stack(non_overlapping_prediction_masks).astype(bool)
+            
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=non_overlapping_prediction_masks,
                 ground_truth_mask_format=None,
-                verbose=False
+                verbose=True
             )
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 
