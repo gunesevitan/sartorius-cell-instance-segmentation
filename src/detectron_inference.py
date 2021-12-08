@@ -20,7 +20,7 @@ def load_detectron2_models(model_directory):
 
     print(f'Loading Detectron2 models from {model_directory}')
     models = {}
-    model_names = sorted(glob(f'{model_directory}/*.pth'))[:1]
+    model_names = sorted(glob(f'{model_directory}/*.pth'))
     trainer_config = yaml.load(open(f'{model_directory}/trainer_config.yaml', 'r'), Loader=yaml.FullLoader)
 
     for fold, weights_path in enumerate(model_names, start=1):
@@ -158,12 +158,12 @@ if __name__ == '__main__':
                     used_pixels += prediction_mask
                     non_overlapping_prediction_masks.append(prediction_mask)
             non_overlapping_prediction_masks = np.stack(non_overlapping_prediction_masks).astype(bool)
-            
+
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=non_overlapping_prediction_masks,
                 ground_truth_mask_format=None,
-                verbose=True
+                verbose=False
             )
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 
