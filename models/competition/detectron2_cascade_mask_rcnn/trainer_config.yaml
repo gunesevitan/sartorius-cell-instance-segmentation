@@ -1,9 +1,9 @@
 DATASET:
-  training_set_name: train_clean_stratified_fold1
-  test_set_name: val_clean_stratified_fold1
+  training_set_name: train_clean_stratified_fold5
+  test_set_name: val_clean_stratified_fold5
   image_root: ../data
 
 MODEL:
   model_zoo_path: Misc/cascade_mask_rcnn_R_50_FPN_3x.yaml
-  pretrained_model_path: ../models/livecell/detectron2_cascade_mask_rcnn/livecell_mask_rcnn_iter50000.pth
+  pretrained_model_path: ../models/livecell/detectron2_cascade_mask_rcnn/livecell_cascade_mask_rcnn_iter50000.pth
   eval_model_path: null
