@@ -47,6 +47,24 @@ detectron2.layers.mask_ops.paste_masks_in_image.__code__ = paste_masks_in_image.
 print('detectron2.layers.mask_ops.paste_masks_in_image is patched.')
 
 
+from detectron2.layers.mask_ops import paste_masks_in_image
+from types import SimpleNamespace
+from detectron2.structures.masks import ROIMasks
+def to_bitmasks(self, boxes: torch.Tensor, height, width, threshold=0.5):
+
+    bitmasks = paste_masks_in_image(
+        self.tensor,
+        boxes,
+        (height, width),
+        threshold=threshold,
+    )
+
+    return SimpleNamespace(tensor=bitmasks)
+
+ROIMasks.to_bitmasks=to_bitmasks
+print('detectron2.structures.masks.ROIMasks is patched.')
+
+'''
 def BitMasks__init__(self, tensor: Union[torch.Tensor, np.ndarray]):
 
     device = tensor.device if isinstance(tensor, torch.Tensor) else torch.device("cpu")
@@ -56,4 +74,4 @@ def BitMasks__init__(self, tensor: Union[torch.Tensor, np.ndarray]):
     self.tensor = tensor
 
 detectron2.structures.masks.BitMasks.__init__.__code__ = BitMasks__init__.__code__
-print('detectron2.structures.masks.BitMasks.init is patched.')
+print('detectron2.structures.masks.BitMasks.init is patched.')'''
