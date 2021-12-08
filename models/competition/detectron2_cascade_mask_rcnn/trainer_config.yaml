@@ -7,3 +7,21 @@ MODEL:
   model_zoo_path: Misc/cascade_mask_rcnn_R_50_FPN_3x.yaml
   pretrained_model_path: ../models/livecell/detectron2_cascade_mask_rcnn/livecell_cascade_mask_rcnn_iter50000.pth
   eval_model_path: null
+
+POST_PROCESSING:
+  nms_iou_thresholds:
+    0: 0.5
+    1: 0.5
+    2: 0.5
+  score_thresholds:
+    0: 0.5
+    1: 0.5
+    2: 0.5
+  area_thresholds:
+    0: 30
+    1: 30
+    2: 30
+  mask_pixel_thresholds:
+    0: 0.5
+    1: 0.5
+    2: 0.5
