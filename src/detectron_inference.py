@@ -14,6 +14,7 @@ import settings
 import annotation_utils
 import metrics
 import ensemble_boxes_nms
+import detectron_patch
 
 
 def load_detectron2_models(model_directory):
@@ -147,6 +148,7 @@ if __name__ == '__main__':
                 annotation_utils.decode_rle_mask(rle_mask=rle_mask, shape=(520, 704), fill_holes=False, is_coco_encoded=False)
                 for rle_mask in df.loc[idx, 'annotation']
             ])
+            prediction_masks = np.uint8(prediction_masks >= post_processing_parameters['mask_pixel_thresholds'][cell_type])
 
             # Simulating non-overlapping mask evaluation
             non_overlapping_prediction_masks = []

@@ -21,3 +21,8 @@ POST_PROCESSING:
     0: 30
     1: 60
     2: 90
+  mask_pixel_thresholds:
+    0: 0.5
+    1: 0.5
+    2: 0.5
+
