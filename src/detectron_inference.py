@@ -31,7 +31,7 @@ def load_detectron2_models(model_directory):
         detectron_config.MODEL.WEIGHTS = weights_path
         detectron_config.merge_from_file(f'{model_directory}/detectron_config.yaml')
 
-        if detectron_config.TEST.ENABLED:
+        if detectron_config.TEST.AUG.ENABLED:
             model = detectron_utils.DefaultPredictorWithTTA(detectron_config)
         else:
             model = DefaultPredictor(detectron_config)
