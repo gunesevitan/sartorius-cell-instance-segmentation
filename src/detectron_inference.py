@@ -12,6 +12,7 @@ from detectron2.config import get_cfg
 
 import settings
 import annotation_utils
+import detectron_utils
 import metrics
 import ensemble_boxes_nms
 
@@ -30,7 +31,11 @@ def load_detectron2_models(model_directory):
         detectron_config.MODEL.WEIGHTS = weights_path
         detectron_config.merge_from_file(f'{model_directory}/detectron_config.yaml')
 
-        model = DefaultPredictor(detectron_config)
+        if detectron_config.TEST.ENABLED:
+            model = detectron_utils.DefaultPredictorWithTTA(detectron_config)
+        else:
+            model = DefaultPredictor(detectron_config)
+
         models[fold] = model
         print(f'Loaded model {weights_path} into memory')
 
@@ -170,8 +175,9 @@ if __name__ == '__main__':
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=non_overlapping_prediction_masks,
                 ground_truth_mask_format=None,
-                verbose=False
+                verbose=True
             )
+            exit()
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 
         fold_score = np.mean(df.loc[val_idx, f'{model_name}_mAP'])

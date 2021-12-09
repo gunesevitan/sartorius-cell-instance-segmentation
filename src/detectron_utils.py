@@ -13,8 +13,10 @@ import torch
 import torch.optim as optim
 from detectron2.engine.hooks import HookBase
 from detectron2.engine import DefaultTrainer, BestCheckpointer
+from detectron2.modeling import GeneralizedRCNNWithTTA, build_model
 from detectron2.checkpoint import DetectionCheckpointer
-from detectron2.data import DatasetCatalog, DatasetMapper, build_detection_test_loader
+from detectron2.data import DatasetCatalog, MetadataCatalog, DatasetMapper, build_detection_test_loader
+import detectron2.data.transforms as T
 from detectron2.evaluation.evaluator import DatasetEvaluator
 from detectron2.solver import WarmupMultiStepLR, WarmupCosineLR
 from detectron2.utils.logger import log_every_n_seconds
@@ -387,3 +389,42 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             )
         else:
             raise ValueError(f'Unknown LR scheduler: {cfg.SOLVER.LR_SCHEDULER_NAME}')
+
+
+class DefaultPredictorWithTTA:
+
+    def __init__(self, cfg):
+
+        self.cfg = cfg.clone()
+        self.model = build_model(self.cfg)
+
+        if len(cfg.DATASETS.TEST):
+            self.metadata = MetadataCatalog.get(cfg.DATASETS.TEST[0])
+
+        checkpointer = DetectionCheckpointer(self.model)
+        checkpointer.load(cfg.MODEL.WEIGHTS)
+
+        self.model = GeneralizedRCNNWithTTA(cfg=self.cfg, model=self.model)
+        self.model.eval()
+
+        self.aug = T.ResizeShortestEdge(
+            [cfg.INPUT.MIN_SIZE_TEST, cfg.INPUT.MIN_SIZE_TEST], cfg.INPUT.MAX_SIZE_TEST
+        )
+
+        self.input_format = cfg.INPUT.FORMAT
+        assert self.input_format in ["RGB", "BGR"], self.input_format
+
+    def __call__(self, original_image):
+
+        with torch.no_grad():
+
+            if self.input_format == "RGB":
+                original_image = original_image[:, :, ::-1]
+                
+            height, width = original_image.shape[:2]
+            image = self.aug.get_transform(original_image).apply_image(original_image)
+            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+
+            inputs = {"image": image, "height": height, "width": width}
+            predictions = self.model([inputs])[0]
+            return predictions
