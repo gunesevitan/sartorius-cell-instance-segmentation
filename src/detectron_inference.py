@@ -55,6 +55,27 @@ def predict_single_image(image, model):
     return prediction
 
 
+def fix_overlaps(masks, area_threshold):
+
+    # Sort masks by their sizes in descending order
+    # This will give importance to larger masks
+    mask_sizes = np.sum(masks, axis=(1, 2))
+    masks = masks[np.argsort(mask_sizes)[::-1], :, :]
+
+    non_overlapping_masks = []
+    used_pixels = np.zeros(image.shape[:2], dtype=int)
+
+    for idx, mask in enumerate(masks):
+        mask = mask * (1 - used_pixels)
+        # Filtering out small objects after removing overlapping masks
+        if np.sum(mask) >= area_threshold:
+            used_pixels += mask
+            non_overlapping_masks.append(mask)
+
+    non_overlapping_masks = np.stack(non_overlapping_masks).astype(bool)
+    return non_overlapping_masks
+
+
 def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=None, score_threshold=None, verbose=False):
 
     boxes_list = []
@@ -161,23 +182,13 @@ if __name__ == '__main__':
                 prediction_masks = np.uint8(prediction_masks >= post_processing_parameters['mask_pixel_thresholds'][cell_type])
 
             # Simulating non-overlapping mask evaluation
-            non_overlapping_prediction_masks = []
-            used_pixels = np.zeros(image.shape[:2], dtype=int)
-            for prediction_mask_idx, prediction_mask in enumerate(prediction_masks):
-                prediction_mask = prediction_mask * (1 - used_pixels)
-                # Filtering out small objects after removing overlapping masks
-                if np.sum(prediction_mask) >= post_processing_parameters['area_thresholds'][cell_type]:
-                    used_pixels += prediction_mask
-                    non_overlapping_prediction_masks.append(prediction_mask)
-            non_overlapping_prediction_masks = np.stack(non_overlapping_prediction_masks).astype(bool)
-
+            prediction_masks = fix_overlaps(prediction_masks, area_threshold=post_processing_parameters['area_thresholds'][cell_type])
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
-                prediction_masks=non_overlapping_prediction_masks,
+                prediction_masks=prediction_masks,
                 ground_truth_mask_format=None,
                 verbose=True
             )
-            exit()
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 
         fold_score = np.mean(df.loc[val_idx, f'{model_name}_mAP'])
