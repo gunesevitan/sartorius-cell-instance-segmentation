@@ -17,7 +17,7 @@ import metrics
 import post_processing
 
 
-def load_detectron2_models(model_directory):
+def load_detectron2_models(model_directory, folds_to_use):
 
     """
     Load detectron models from the given directory
@@ -25,6 +25,7 @@ def load_detectron2_models(model_directory):
     Parameters
     ----------
     model_directory (str): Directory of models, trainer_config and detectron_config
+    folds_to_use (list): List of folds to load
 
     Returns
     -------
@@ -41,23 +42,25 @@ def load_detectron2_models(model_directory):
         if fold == 6:
             fold = 'non_noisy'
 
-        detectron_config = get_cfg()
-        detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
-        detectron_config.MODEL.WEIGHTS = weights_path
-        detectron_config.merge_from_file(f'{model_directory}/detectron_config.yaml')
+        if fold in folds_to_use:
 
-        # Disable NMS and score thresholds so it can be done class-wise
-        detectron_config.MODEL.ROI_HEADS.NMS_THRESH_TEST = 1.0
-        detectron_config.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.0
-        detectron_config.TEST.DETECTIONS_PER_IMAGE = 1000
+            detectron_config = get_cfg()
+            detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
+            detectron_config.MODEL.WEIGHTS = weights_path
+            detectron_config.merge_from_file(f'{model_directory}/detectron_config.yaml')
 
-        if detectron_config.TEST.AUG.ENABLED:
-            model = detectron_utils.DefaultPredictorWithTTA(detectron_config)
-        else:
-            model = DefaultPredictor(detectron_config)
+            # Disable NMS and score thresholds so it can be done class-wise
+            detectron_config.MODEL.ROI_HEADS.NMS_THRESH_TEST = 1.0
+            detectron_config.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.0
+            detectron_config.TEST.DETECTIONS_PER_IMAGE = 1000
 
-        models[fold] = model
-        print(f'Loaded model {weights_path} into memory')
+            if detectron_config.TEST.AUG.ENABLED:
+                model = detectron_utils.DefaultPredictorWithTTA(detectron_config)
+            else:
+                model = DefaultPredictor(detectron_config)
+
+            models[fold] = model
+            print(f'Loaded model {weights_path} into memory')
 
     return models
 
