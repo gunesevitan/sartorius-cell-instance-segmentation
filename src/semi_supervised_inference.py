@@ -5,6 +5,7 @@ import cv2
 from scipy.stats import mode
 
 import settings
+import annotation_utils
 import detectron_patch
 import detectron_inference
 import post_processing
@@ -36,13 +37,15 @@ if __name__ == '__main__':
         }
     }
 
-    for filename in tqdm(semi_supervised_images):
+    df_semi_supervised = pd.DataFrame(columns=['id', 'annotation', 'annotation_filled'])
+
+    for image_id in tqdm(semi_supervised_images):
 
         all_prediction_boxes = []
         all_prediction_masks = []
         cell_types = []
 
-        image = cv2.imread(f'{settings.DATA_PATH}/train_semi_supervised_images/{filename}.png')
+        image = cv2.imread(f'{settings.DATA_PATH}/train_semi_supervised_images/{image_id}.png')
         for fold, model in detectron2_mask_rcnn_models.items():
             prediction = detectron_inference.predict_single_image(image=image, model=model)
             # Select cell type as the most predicted label
@@ -75,6 +78,8 @@ if __name__ == '__main__':
             mask_area_order='descending'
         )
 
-        #for prediction_mask in blended_prediction_masks:
-
+        for mask in processed_masks:
+            rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
+            df_semi_supervised = df_semi_supervised.append({'id': image_id, 'annotation': rle_encoded_mask, 'annotation_filled': rle_encoded_mask}, ignore_index=True)
+            
         break
