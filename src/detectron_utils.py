@@ -11,7 +11,6 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
-import detectron2
 from detectron2.engine.hooks import HookBase
 from detectron2.engine import DefaultTrainer
 from detectron2.modeling import GeneralizedRCNNWithTTA, build_model
