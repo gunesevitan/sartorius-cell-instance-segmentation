@@ -16,7 +16,7 @@ if __name__ == '__main__':
     semi_supervised_images = df.loc[df['annotation'].isnull(), 'id'].values
     detectron2_mask_rcnn_models = detectron_inference.load_detectron2_models(
         model_directory=f'{settings.MODELS_PATH}/competition/detectron2_mask_rcnn2',
-        folds_to_use=[1]
+        folds_to_use=[1, 2]
     )
     detectron2_mask_rcnn_post_processing_parameters = {
         'nms_iou_thresholds': {
