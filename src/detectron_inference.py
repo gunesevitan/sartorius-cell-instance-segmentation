@@ -14,10 +14,22 @@ import settings
 import annotation_utils
 import detectron_utils
 import metrics
-import ensemble_boxes_nms
+import post_processing
 
 
 def load_detectron2_models(model_directory):
+
+    """
+    Load detectron models from the given directory
+
+    Parameters
+    ----------
+    model_directory (str): Directory of models, trainer_config and detectron_config
+
+    Returns
+    -------
+    models (dict): Dictionary of models
+    """
 
     print(f'Loading Detectron2 models from {model_directory}')
     models = {}
@@ -26,10 +38,18 @@ def load_detectron2_models(model_directory):
 
     for fold, weights_path in enumerate(model_names, start=1):
 
+        if fold == 6:
+            fold = 'non_noisy'
+
         detectron_config = get_cfg()
         detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
         detectron_config.MODEL.WEIGHTS = weights_path
         detectron_config.merge_from_file(f'{model_directory}/detectron_config.yaml')
+
+        # Disable NMS and score thresholds so it can be done class-wise
+        detectron_config.MODEL.ROI_HEADS.NMS_THRESH_TEST = 1.0
+        detectron_config.MODEL.ROI_HEADS.SCORE_THRESH_TEST = 0.0
+        detectron_config.TEST.DETECTIONS_PER_IMAGE = 1000
 
         if detectron_config.TEST.AUG.ENABLED:
             model = detectron_utils.DefaultPredictorWithTTA(detectron_config)
@@ -44,6 +64,19 @@ def load_detectron2_models(model_directory):
 
 def predict_single_image(image, model):
 
+    """
+    Predict given image with given model and move predictions to cpu
+
+    Parameters
+    ----------
+    image [numpy.ndarray of shape (height, width, channel)]: Image (BGR)
+    model (torch.nn.Module): Detectron2 Model
+
+    Returns
+    -------
+    prediction (dict): Dictionary of predicted boxes, labels, scores and masks as numpy arrays
+    """
+
     prediction = model(image)
     prediction = {
         'boxes': prediction['instances'].pred_boxes.tensor.cpu().numpy(),
@@ -55,85 +88,12 @@ def predict_single_image(image, model):
     return prediction
 
 
-def fix_overlaps(masks, area_threshold):
-
-    # Sort masks by their sizes in descending order
-    # This will give importance to larger masks
-    mask_sizes = np.sum(masks, axis=(1, 2))
-    masks = masks[np.argsort(mask_sizes)[::-1], :, :]
-
-    non_overlapping_masks = []
-    used_pixels = np.zeros(image.shape[:2], dtype=int)
-
-    for idx, mask in enumerate(masks):
-        mask = mask * (1 - used_pixels)
-        # Filtering out small objects after removing overlapping masks
-        if np.sum(mask) >= area_threshold:
-            used_pixels += mask
-            non_overlapping_masks.append(mask)
-
-    non_overlapping_masks = np.stack(non_overlapping_masks).astype(bool)
-    return non_overlapping_masks
-
-
-def post_process(predictions, box_height_scale, box_width_scale, nms_iou_threshold=None, score_threshold=None, verbose=False):
-
-    boxes_list = []
-    scores_list = []
-    labels_list = []
-    masks_list = []
-
-    # Storing predictions of multiple models into lists
-    for prediction in predictions:
-
-        # Scale box coordinates between 0 and 1
-        prediction['boxes'][:, 0] /= box_width_scale
-        prediction['boxes'][:, 1] /= box_height_scale
-        prediction['boxes'][:, 2] /= box_width_scale
-        prediction['boxes'][:, 3] /= box_height_scale
-
-        boxes_list.append(prediction['boxes'].tolist())
-        scores_list.append(prediction['scores'].tolist())
-        labels_list.append(prediction['labels'].tolist())
-        masks_list.append(prediction['masks'])
-
-        if verbose:
-            print(f'{len(prediction["scores"])} objects are predicted with {np.mean(prediction["scores"]):.4f} average score')
-
-    # Filtering out overlapping boxes with nms
-    boxes, scores, labels, masks = ensemble_boxes_nms.nms(
-        boxes=boxes_list,
-        scores=scores_list,
-        labels=labels_list,
-        masks=masks_list,
-        iou_thr=nms_iou_threshold,
-        weights=None
-    )
-
-    if verbose:
-        print(f'{len(scores)} objects are kept after applying {nms_iou_threshold} nms iou threshold with {np.mean(scores):.4f} average score')
-
-    # Rescaling box coordinates between image height and width
-    boxes[:, 0] *= box_width_scale
-    boxes[:, 1] *= box_height_scale
-    boxes[:, 2] *= box_width_scale
-    boxes[:, 3] *= box_height_scale
-
-    # Filtering out boxes based on confidence scores
-    score_condition = scores >= score_threshold
-    boxes = boxes[score_condition]
-    scores = scores[score_condition]
-    masks = masks[score_condition]
-    labels = labels[score_condition]
-
-    if verbose:
-        print(f'{len(scores)} objects are kept after applying {score_threshold} score threshold with {np.mean(scores):.4f} average score')
-
-    return boxes, scores, labels, masks
-
-
 if __name__ == '__main__':
 
+    # Patch modifies detectron2.layers.mask_ops.paste_masks_in_image and detectron2.structures.masks.BitMasks.__init__ functions
+    # Mask predictions are returned as sigmoided pixel logits when patch is applied
+    # Otherwise, they are returned as bitmasks by default
+    # (Patch makes inference 2.5x slower)
     PATCH = False
     if PATCH:
         import detectron_patch
@@ -162,14 +122,15 @@ if __name__ == '__main__':
 
             image = cv2.imread(f'{settings.DATA_PATH}/train_images/{df.loc[idx, "id"]}.png')
             prediction = predict_single_image(image=image, model=models[fold])
-            # Select cell type as most predicted label
+            # Select cell type as the most predicted label
             cell_type = mode(prediction['labels'])[0][0]
 
-            prediction_boxes, prediction_scores, prediction_labels, prediction_masks = post_process(
+            prediction_boxes, prediction_scores, prediction_labels, prediction_masks = post_processing.filter_predictions(
                 predictions=[prediction],
                 box_height_scale=image.shape[0],
                 box_width_scale=image.shape[1],
-                nms_iou_threshold=post_processing_parameters['nms_iou_thresholds'][cell_type],
+                iou_threshold=post_processing_parameters['nms_iou_thresholds'][cell_type],
+                nms_weights=None,
                 score_threshold=post_processing_parameters['score_thresholds'][cell_type],
                 verbose=False
             )
@@ -179,10 +140,15 @@ if __name__ == '__main__':
             ])
 
             if PATCH:
+                # Convert soft predictions to labels manually
                 prediction_masks = np.uint8(prediction_masks >= post_processing_parameters['mask_pixel_thresholds'][cell_type])
 
             # Simulating non-overlapping mask evaluation
-            prediction_masks = fix_overlaps(prediction_masks, area_threshold=post_processing_parameters['area_thresholds'][cell_type])
+            prediction_masks = post_processing.fix_overlaps(
+                prediction_masks,
+                area_threshold=post_processing_parameters['area_thresholds'][cell_type],
+                mask_area_order='descending'
+            )
             average_precision = metrics.get_average_precision_detectron(
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=prediction_masks,

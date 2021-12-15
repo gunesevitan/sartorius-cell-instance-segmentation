@@ -22,6 +22,7 @@ def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=F
     segmentation_format (str): Segmentation format (bitmask or polygon)
     category_ids (dict): Dictionary of label mapping
     fill_holes (bool): Whether to use filled annotations or not
+    source (str): Data source (competition or livecell)
 
     Returns
     -------
