@@ -11,8 +11,9 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.optim as optim
+import detectron2
 from detectron2.engine.hooks import HookBase
-from detectron2.engine import DefaultTrainer, BestCheckpointer
+from detectron2.engine import DefaultTrainer
 from detectron2.modeling import GeneralizedRCNNWithTTA, build_model
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.data import DatasetCatalog, MetadataCatalog, DatasetMapper, build_detection_test_loader
@@ -328,13 +329,6 @@ class InstanceSegmentationTrainer(DefaultTrainer):
             )
             hooks.insert(-1, eval_loss_hook)
 
-            best_checkpointer = BestCheckpointer(
-                eval_period=self.cfg.TEST.EVAL_PERIOD,
-                checkpointer=DetectionCheckpointer(self.model, self.cfg.OUTPUT_DIR),
-                val_metric='mAP',
-                mode='max'
-            )
-
             topk_averager_checkpointer = TopKAveragerCheckpointer(
                 eval_period=self.cfg.TEST.EVAL_PERIOD,
                 checkpointer=self.checkpointer,
@@ -354,7 +348,6 @@ class InstanceSegmentationTrainer(DefaultTrainer):
 
     @classmethod
     def build_lr_scheduler(cls, cfg, optimizer):
-
         if cfg.SOLVER.LR_SCHEDULER_NAME == 'ReduceLROnPlateau':
             return optim.lr_scheduler.ReduceLROnPlateau(
                 optimizer,
@@ -412,19 +405,19 @@ class DefaultPredictorWithTTA:
         )
 
         self.input_format = cfg.INPUT.FORMAT
-        assert self.input_format in ["RGB", "BGR"], self.input_format
+        assert self.input_format in ['RGB', 'BGR'], self.input_format
 
     def __call__(self, original_image):
 
         with torch.no_grad():
 
-            if self.input_format == "RGB":
+            if self.input_format == 'RGB':
                 original_image = original_image[:, :, ::-1]
                 
             height, width = original_image.shape[:2]
             image = self.aug.get_transform(original_image).apply_image(original_image)
-            image = torch.as_tensor(image.astype("float32").transpose(2, 0, 1))
+            image = torch.as_tensor(image.astype('float32').transpose(2, 0, 1))
 
-            inputs = {"image": image, "height": height, "width": width}
+            inputs = {'image': image, 'height': height, 'width': width}
             predictions = self.model([inputs])[0]
             return predictions
