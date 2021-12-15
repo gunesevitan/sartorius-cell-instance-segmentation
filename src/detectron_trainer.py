@@ -26,6 +26,7 @@ if __name__ == '__main__':
         json_file=f'{settings.DATA_PATH}/coco_datasets/{trainer_config["DATASET"]["training_set_name"]}.json',
         image_root=trainer_config['DATASET']['image_root']
     )
+
     if trainer_config['DATASET']['test_set_name'] is not None:
         register_coco_instances(
             name=trainer_config['DATASET']['test_set_name'],
@@ -33,7 +34,14 @@ if __name__ == '__main__':
             json_file=f'{settings.DATA_PATH}/coco_datasets/{trainer_config["DATASET"]["test_set_name"]}.json',
             image_root=trainer_config['DATASET']['image_root']
         )
-    train_dataset = DatasetCatalog.get(trainer_config['DATASET']['training_set_name'])
+
+    if trainer_config['DATASET']['semi_supervised_set_name'] is not None:
+        register_coco_instances(
+            name=trainer_config['DATASET']['semi_supervised_set_name'],
+            metadata={},
+            json_file=f'{settings.DATA_PATH}/coco_datasets/{trainer_config["DATASET"]["test_set_name"]}.json',
+            image_root=trainer_config['DATASET']['image_root']
+        )
 
     detectron_config.merge_from_file(model_zoo.get_config_file(trainer_config['MODEL']['model_zoo_path']))
     if trainer_config['MODEL']['pretrained_model_path'].split('.')[-1] == 'yaml':
