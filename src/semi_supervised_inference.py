@@ -17,7 +17,7 @@ if __name__ == '__main__':
     df_semi_supervised = df.loc[df['annotation'].isnull(), :].reset_index(drop=True)
     detectron2_mask_rcnn_models = detectron_inference.load_detectron2_models(
         model_directory=f'{settings.MODELS_PATH}/competition/detectron2_mask_rcnn2',
-        folds_to_use=[1]
+        folds_to_use=[1, 2, 3, 4, 5]
     )
     detectron2_mask_rcnn_post_processing_parameters = {
         'nms_iou_thresholds': {
@@ -101,7 +101,6 @@ if __name__ == '__main__':
                 'annotation_broken': False
             }, ignore_index=True)
 
-        break
-
     df_labeled = df.loc[~df['annotation'].isnull(), :].reset_index(drop=True)
     df_labeled = pd.concat([df_labeled, df_semi_supervised_annotations], axis=0, ignore_index=True)
+    df_labeled.to_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised.csv', index=False)
