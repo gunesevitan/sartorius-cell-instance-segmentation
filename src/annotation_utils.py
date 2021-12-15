@@ -96,7 +96,7 @@ def is_broken(mask, horizontal_line_threshold=50):
         return False
 
 
-def binary_to_multi_class_mask(binary_masks):
+def binary_to_multi_object_mask(binary_masks):
 
     """
     Encode multiple 2d binary masks into a single 2d multi-object segmentation mask
@@ -196,6 +196,7 @@ def polygon_to_mask(polygons, shape):
     Parameters
     ----------
     polygons [list of lists (n_points * 2)]: Polygons
+    shape (tuple): Height and width of the mask
 
     Returns
     -------
