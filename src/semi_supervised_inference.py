@@ -86,12 +86,6 @@ if __name__ == '__main__':
 
         for mask in blended_masks:
             rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
-<<<<<<< HEAD
-            df_semi_supervised = df_semi_supervised.append({'id': image_id, 'annotation': rle_encoded_mask, 'annotation_filled': rle_encoded_mask}, ignore_index=True)
-            
-        break
-
-=======
             df_semi_supervised_annotations = df_semi_supervised_annotations.append({
                 'id': image_id,
                 'annotation': rle_encoded_mask,
@@ -111,4 +105,4 @@ if __name__ == '__main__':
 
     df_labeled = df.loc[~df['annotation'].isnull(), :].reset_index(drop=True)
     df_labeled = pd.concat([df_labeled, df_semi_supervised_annotations], axis=0, ignore_index=True)
->>>>>>> fc6705e5162fb43a53b014805e8ea877ef7148fe
+
