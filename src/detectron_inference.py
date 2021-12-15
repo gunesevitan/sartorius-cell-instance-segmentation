@@ -187,7 +187,7 @@ if __name__ == '__main__':
                 ground_truth_masks=ground_truth_masks,
                 prediction_masks=prediction_masks,
                 ground_truth_mask_format=None,
-                verbose=True
+                verbose=False
             )
             df.loc[idx, f'{model_name}_mAP'] = average_precision
 
