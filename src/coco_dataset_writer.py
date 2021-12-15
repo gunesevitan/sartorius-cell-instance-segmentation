@@ -88,7 +88,7 @@ def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=F
 
 if __name__ == '__main__':
 
-    DATASET = 'livecell'
+    DATASET = 'semi_supervised'
 
     if DATASET == 'competition':
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
             with open(f'{settings.DATA_PATH}/coco_datasets/val_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
                 json.dump(val_dataset, f, ensure_ascii=True, indent=4)
 
-        print(f'Non-noisy Split COCO Datasets')
+        print(f'Writing Non-noisy Split COCO Datasets')
 
         train_images = [
             {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_images/{image_id}.png'}
@@ -147,6 +147,8 @@ if __name__ == '__main__':
 
     elif DATASET == 'livecell':
 
+        print(f'Writing LIVECell COCO Datasets')
+
         df_livecell = pd.read_csv(f'{settings.DATA_PATH}/livecell.csv')
         category_ids = settings.LIVECELL_LABEL_ENCODER
         categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
@@ -161,3 +163,24 @@ if __name__ == '__main__':
         livecell_dataset = {'categories': categories, 'images': livecell_images, 'annotations': livecell_annotations}
         with open(f'{settings.DATA_PATH}/coco_datasets/livecell.json', 'w', encoding='utf-8') as f:
             json.dump(livecell_dataset, f, ensure_ascii=True, indent=4)
+
+    elif DATASET == 'semi_supervised':
+
+        print(f'Writing Semi-supervised COCO Datasets')
+
+        df_semi_supervised = pd.read_csv(f'{settings.DATA_PATH}/train_processed_labeled_320.csv')
+        df_semi_supervised = df_semi_supervised.loc[73585:, :].reset_index(drop=True)
+
+        category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
+        categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
+
+        semi_supervised_images = [
+            {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_semi_supervised_images/{image_id}.png'}
+            for image_id, row in
+            df_semi_supervised.groupby('id').agg('first').iterrows()
+        ]
+
+        semi_supervised_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_semi_supervised.iterrows(), total=len(df_semi_supervised)))
+        semi_supervised_dataset = {'categories': categories, 'images': semi_supervised_images, 'annotations': semi_supervised_annotations}
+        with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_320.json', 'w', encoding='utf-8') as f:
+            json.dump(semi_supervised_dataset, f, ensure_ascii=True, indent=4)
