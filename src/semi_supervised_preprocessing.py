@@ -22,5 +22,7 @@ if __name__ == '__main__':
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         train_semi_supervised_images.append(image)
 
-    x = np.isin(train_semi_supervised_images, train_images)
-    
+    duplicates = []
+    for train_semi_supervised_image in tqdm(train_semi_supervised_images):
+        is_duplicate = np.any(np.all(train_semi_supervised_image == train_images, axis=(1, 2)))
+        duplicates.append(is_duplicate)

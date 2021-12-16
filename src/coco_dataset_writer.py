@@ -170,6 +170,7 @@ if __name__ == '__main__':
 
         df_semi_supervised = pd.read_csv(f'{settings.DATA_PATH}/train_processed_labeled_320.csv')
         df_semi_supervised = df_semi_supervised.loc[73585:, :].reset_index(drop=True)
+        df_semi_supervised = df_semi_supervised.loc[df_semi_supervised['cell_type'] == 'cort', :]
 
         category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
         categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
@@ -182,5 +183,5 @@ if __name__ == '__main__':
 
         semi_supervised_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_semi_supervised.iterrows(), total=len(df_semi_supervised)))
         semi_supervised_dataset = {'categories': categories, 'images': semi_supervised_images, 'annotations': semi_supervised_annotations}
-        with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_320.json', 'w', encoding='utf-8') as f:
+        with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_320_only_cort.json', 'w', encoding='utf-8') as f:
             json.dump(semi_supervised_dataset, f, ensure_ascii=True, indent=4)
