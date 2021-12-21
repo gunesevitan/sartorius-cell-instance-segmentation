@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 import cv2
 from scipy.stats import mode
+from scipy.ndimage import binary_fill_holes
 
 import settings
 import annotation_utils
-import detectron_patch
 import detectron_inference
 import post_processing
 
@@ -21,19 +21,19 @@ if __name__ == '__main__':
     )
     detectron2_mask_rcnn_post_processing_parameters = {
         'nms_iou_thresholds': {
-            0: 0.6,
-            1: 0.5,
-            2: 0.4
+            0: 0.3,
+            1: 0.3,
+            2: 0.3
         },
         'score_thresholds': {
             0: 0.8,
-            1: 0.5,
-            2: 0.4
+            1: 0.45,
+            2: 0.45
         },
         'area_thresholds': {
-            0: 75,
+            0: 60,
             1: 60,
-            2: 90
+            2: 150
         }
     }
 
@@ -46,10 +46,6 @@ if __name__ == '__main__':
         plate_time = df_semi_supervised.loc[idx, 'plate_time']
         sample_date = df_semi_supervised.loc[idx, 'sample_date']
         sample_id = df_semi_supervised.loc[idx, 'sample_id']
-
-        all_prediction_boxes = []
-        all_prediction_masks = []
-        cell_types = []
 
         image = cv2.imread(f'{settings.DATA_PATH}/train_semi_supervised_images/{image_id}.png')
         for fold, model in detectron2_mask_rcnn_models.items():
@@ -66,41 +62,30 @@ if __name__ == '__main__':
                 verbose=False
             )
 
-            all_prediction_boxes.append(prediction_boxes)
-            all_prediction_masks.append(prediction_masks)
-            cell_types.append(cell_type)
-        cell_type = mode(cell_types)[0][0]
+            prediction_masks = post_processing.fix_overlaps(
+                prediction_masks,
+                area_threshold=detectron2_mask_rcnn_post_processing_parameters['area_thresholds'][cell_type],
+                mask_area_order='descending'
+            )
 
-        blended_masks = post_processing.blend_masks(
-            prediction_boxes=all_prediction_boxes,
-            prediction_masks=all_prediction_masks,
-            iou_threshold=0.9,
-            label_threshold=0.5,
-            drop_single_components=True
-        )
-        blended_masks = post_processing.fix_overlaps(
-            blended_masks,
-            area_threshold=detectron2_mask_rcnn_post_processing_parameters['area_thresholds'][cell_type],
-            mask_area_order='descending'
-        )
-
-        for mask in blended_masks:
-            rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
-            df_semi_supervised_annotations = df_semi_supervised_annotations.append({
-                'id': image_id,
-                'annotation': rle_encoded_mask,
-                'width': 704,
-                'height': 520,
-                'cell_type': cell_type_label,
-                'plate_time': plate_time,
-                'sample_date': sample_date,
-                'sample_id': sample_id,
-                'stratified_fold': -1,
-                'non_noisy_split': -1,
-                'annotation_filled': rle_encoded_mask,
-                'annotation_broken': False
-            }, ignore_index=True)
+            for mask in prediction_masks:
+                mask = binary_fill_holes(mask).astype(np.uint8)
+                rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
+                df_semi_supervised_annotations = df_semi_supervised_annotations.append({
+                    'id': image_id,
+                    'annotation': rle_encoded_mask,
+                    'width': 704,
+                    'height': 520,
+                    'cell_type': cell_type_label,
+                    'plate_time': plate_time,
+                    'sample_date': sample_date,
+                    'sample_id': sample_id,
+                    'stratified_fold': fold,
+                    'non_noisy_split': 0,
+                    'annotation_filled': rle_encoded_mask,
+                    'annotation_broken': False
+                }, ignore_index=True)
 
     df_labeled = df.loc[~df['annotation'].isnull(), :].reset_index(drop=True)
     df_labeled = pd.concat([df_labeled, df_semi_supervised_annotations], axis=0, ignore_index=True)
-    df_labeled.to_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised.csv', index=False)
+    df_labeled.to_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised_0321.csv', index=False)
