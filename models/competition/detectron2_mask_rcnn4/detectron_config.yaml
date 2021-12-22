@@ -1,0 +1,155 @@
+VERSION: 2
+
+MODEL:
+  PIXEL_MEAN:
+    - 127.9755108670509
+    - 127.9755108670509
+    - 127.9755108670509
+  PIXEL_STD:
+    - 12.206579996359626
+    - 12.206579996359626
+    - 12.206579996359626
+  BACKBONE:
+    FREEZE_AT: 0
+  FPN:
+    IN_FEATURES:
+      - res2
+      - res3
+      - res4
+      - res5
+    OUT_CHANNELS: 256
+    NORM: ''
+  PROPOSAL_GENERATOR:
+    MIN_SIZE: 0
+  RPN:
+    HEAD_NAME: StandardRPNHead
+    IN_FEATURES:
+      - p2
+      - p3
+      - p4
+      - p5
+      - p6
+    BOUNDARY_THRESH: -1
+    IOU_THRESHOLDS:
+      - 0.3
+      - 0.7
+    IOU_LABELS:
+      - 0
+      - -1
+      - 1
+    BATCH_SIZE_PER_IMAGE: 256
+    POSITIVE_FRACTION: 0.5
+    BBOX_REG_LOSS_TYPE: smooth_l1
+    BBOX_REG_LOSS_WEIGHT: 1.0
+    PRE_NMS_TOPK_TRAIN: 3000
+    PRE_NMS_TOPK_TEST: 3000
+    POST_NMS_TOPK_TRAIN: 3000
+    POST_NMS_TOPK_TEST: 3000
+    NMS_THRESH: 0.7
+  ROI_HEADS:
+    NAME: StandardROIHeads
+    NUM_CLASSES: 3
+    IN_FEATURES:
+      - p2
+      - p3
+      - p4
+      - p5
+      - p6
+    IOU_THRESHOLDS:
+      - 0.5
+    IOU_LABELS:
+      - 0
+      - 1
+    BATCH_SIZE_PER_IMAGE: 256
+    POSITIVE_FRACTION: 0.25
+    SCORE_THRESH_TEST: 0.6
+    NMS_THRESH_TEST: 0.4
+    PROPOSAL_APPEND_GT: False
+  ROI_BOX_HEAD:
+    BBOX_REG_LOSS_TYPE: smooth_l1
+    BBOX_REG_LOSS_WEIGHT: 1.0
+    NORM: ''
+    CLS_AGNOSTIC_BBOX_REG: True
+  ROI_MASK_HEAD:
+    NAME: MaskRCNNConvUpsampleHead
+    POOLER_RESOLUTION: 14
+    POOLER_SAMPLING_RATIO: 0
+    NUM_CONV: 4
+    CONV_DIM: 256
+    NORM: ''
+    CLS_AGNOSTIC_MASK: True
+
+INPUT:
+  MIN_SIZE_TRAIN:
+    - 800
+    - 825
+    - 850
+    - 875
+    - 900
+  MIN_SIZE_TRAIN_SAMPLING: choice
+  MAX_SIZE_TRAIN: 1333
+  MIN_SIZE_TEST: 800
+  MAX_SIZE_TEST: 1333
+  RANDOM_FLIP: horizontal
+  FORMAT: BGR
+  MASK_FORMAT: bitmask
+
+DATASETS:
+  TRAIN:
+    - train_clean_stratified_fold1
+    - semi_supervised_0321_stratified_fold1
+  TEST:
+    - val_clean_stratified_fold1
+
+DATALOADER:
+  NUM_WORKERS: 4
+  ASPECT_RATIO_GROUPING: True
+  SAMPLER_TRAIN: TrainingSampler
+  REPEAT_THRESHOLD: 0.0
+  FILTER_EMPTY_ANNOTATIONS: True
+
+SOLVER:
+  LR_SCHEDULER_NAME: WarmupMultiStepLR
+  MAX_ITER: 6140
+  BASE_LR: 0.001
+  MOMENTUM: 0.9
+  NESTEROV: False
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_NORM: 0.0
+  GAMMA: 0.5
+  STEPS: [3000, 12000, 24000]
+  WARMUP_FACTOR: 0.0
+  WARMUP_ITERS: 0
+  WARMUP_METHOD: linear
+  CHECKPOINT_PERIOD: 1000000
+  IMS_PER_BATCH: 4
+  CLIP_GRADIENTS:
+    ENABLED: False
+    CLIP_TYPE: value
+    CLIP_VALUE: 1.0
+    NORM_TYPE: 2.0
+  AMP:
+    ENABLED: False
+
+TEST:
+  EVAL_PERIOD: 614
+  DETECTIONS_PER_IMAGE: 1000
+  AUG:
+    ENABLED: False
+    MIN_SIZES:
+      - 400
+      - 500
+      - 600
+      - 700
+      - 800
+      - 900
+      - 1000
+      - 1100
+      - 1200
+    MAX_SIZE: 4000
+    FLIP: True
+
+OUTPUT_DIR: ../models/competition/detectron2_mask_rcnn4
+SEED: 42
+CUDNN_BENCHMARK: False
+VIS_PERIOD: 0

@@ -1,0 +1,28 @@
+DATASET:
+  training_set_name: train_clean_stratified_fold1
+  test_set_name: val_clean_stratified_fold1
+  semi_supervised_set_name: semi_supervised_0321_stratified_fold1
+  image_root: ../data
+
+MODEL:
+  model_zoo_path: COCO-InstanceSegmentation/mask_rcnn_X_101_32x8d_FPN_3x.yaml
+  pretrained_model_path: ../models/livecell/detectron2_mask_rcnn/livecell_mask_rcnn_epoch50.pth
+  eval_model_path: null
+
+POST_PROCESSING:
+  nms_iou_thresholds:
+    0: 0.5
+    1: 0.4
+    2: 0.3
+  score_thresholds:
+    0: 0.7
+    1: 0.2
+    2: 0.3
+  area_thresholds:
+    0: 30
+    1: 60
+    2: 90
+  mask_pixel_thresholds:
+    0: 0.5
+    1: 0.5
+    2: 0.5
