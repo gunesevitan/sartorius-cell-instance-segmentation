@@ -13,7 +13,7 @@ import settings
 import annotation_utils
 
 
-def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=False, source='livecell'):
+def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=False, source='competition'):
 
     """
     Convert single row in dataframe into a COCO annotation
@@ -91,7 +91,7 @@ def annotate(idx, row, category_ids, segmentation_format='bitmask', fill_holes=F
 
 if __name__ == '__main__':
 
-    DATASET = 'semi_supervised_joni'
+    DATASET = 'semi_supervised_cellpose'
 
     if DATASET == 'competition':
 
@@ -187,63 +187,66 @@ if __name__ == '__main__':
 
             semi_supervised_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_semi_supervised[df_semi_supervised['stratified_fold'] == fold].iterrows(), total=len(df_semi_supervised[df_semi_supervised['stratified_fold'] == fold])))
             semi_supervised_dataset = {'categories': categories, 'images': semi_supervised_images, 'annotations': semi_supervised_annotations}
-            with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_0321_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
+            with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_321_stratified_fold{int(fold)}.json', 'w', encoding='utf-8') as f:
                 json.dump(semi_supervised_dataset, f, ensure_ascii=True, indent=4)
 
-    elif DATASET == 'semi_supervised_joni':
+    elif DATASET == 'semi_supervised_cellpose':
 
-        df = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
-        df_semi_supervised = df.loc[df['annotation'].isnull(), :].reset_index(drop=True)
-        df_semi_supervised_annotations = pd.DataFrame(columns=df_semi_supervised.columns)
-        semi_supervised_paths = glob(f'{settings.DATA_PATH}/train_semi_supervised_masks_v1/*')
+        if False:
+            df = pd.read_csv(f'{settings.DATA_PATH}/train_processed.csv')
+            df_semi_supervised = df.loc[df['annotation'].isnull(), :].reset_index(drop=True)
+            df_semi_supervised_annotations = pd.DataFrame(columns=df_semi_supervised.columns)
+            semi_supervised_paths = glob(f'{settings.DATA_PATH}/train_semi_supervised_masks_v1/*')
 
-        for idx in tqdm(df_semi_supervised.index):
-            image_id = df_semi_supervised.loc[idx, 'id']
-            cell_type = df_semi_supervised.loc[idx, 'cell_type']
-            plate_time = df_semi_supervised.loc[idx, 'plate_time']
-            sample_date = df_semi_supervised.loc[idx, 'sample_date']
-            sample_id = df_semi_supervised.loc[idx, 'sample_id']
+            for idx in tqdm(df_semi_supervised.index):
+                image_id = df_semi_supervised.loc[idx, 'id']
+                cell_type = df_semi_supervised.loc[idx, 'cell_type']
+                plate_time = df_semi_supervised.loc[idx, 'plate_time']
+                sample_date = df_semi_supervised.loc[idx, 'sample_date']
+                sample_id = df_semi_supervised.loc[idx, 'sample_id']
 
-            multi_object_mask = cv2.imread(f'{settings.DATA_PATH}/train_semi_supervised_masks_v1/{image_id}_masks.png', cv2.IMREAD_UNCHANGED)
-            prediction_masks = []
-            for obj in range(1, multi_object_mask.max() + 1):
-                prediction_masks.append(np.uint8(multi_object_mask == obj))
-            prediction_masks = np.stack(prediction_masks)
+                multi_object_mask = cv2.imread(f'{settings.DATA_PATH}/train_semi_supervised_masks_v1/{image_id}_masks.png', cv2.IMREAD_UNCHANGED)
+                prediction_masks = []
+                for obj in range(1, multi_object_mask.max() + 1):
+                    prediction_masks.append(np.uint8(multi_object_mask == obj))
+                prediction_masks = np.stack(prediction_masks)
 
-            for mask in prediction_masks:
-                rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
-                df_semi_supervised_annotations = df_semi_supervised_annotations.append({
-                    'id': image_id,
-                    'annotation': rle_encoded_mask,
-                    'width': 704,
-                    'height': 520,
-                    'cell_type': cell_type,
-                    'plate_time': plate_time,
-                    'sample_date': sample_date,
-                    'sample_id': sample_id,
-                    'stratified_fold': -1,
-                    'non_noisy_split': -1,
-                    'annotation_filled': rle_encoded_mask,
-                    'annotation_broken': False
-                }, ignore_index=True)
+                for mask in prediction_masks:
+                    rle_encoded_mask = annotation_utils.encode_rle_mask(mask)
+                    df_semi_supervised_annotations = df_semi_supervised_annotations.append({
+                        'id': image_id,
+                        'annotation': rle_encoded_mask,
+                        'width': 704,
+                        'height': 520,
+                        'cell_type': cell_type,
+                        'plate_time': plate_time,
+                        'sample_date': sample_date,
+                        'sample_id': sample_id,
+                        'stratified_fold': -1,
+                        'non_noisy_split': -1,
+                        'annotation_filled': rle_encoded_mask,
+                        'annotation_broken': False
+                    }, ignore_index=True)
 
-        df_labeled = df.loc[~df['annotation'].isnull(), :].reset_index(drop=True)
-        df_labeled = pd.concat([df_labeled, df_semi_supervised_annotations], axis=0, ignore_index=True)
-        df_labeled.to_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised_cellpose.csv', index=False)
+            df_labeled = df.loc[~df['annotation'].isnull(), :].reset_index(drop=True)
+            df_labeled = pd.concat([df_labeled, df_semi_supervised_annotations], axis=0, ignore_index=True)
+            df_labeled.to_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised_cellpose.csv', index=False)
 
-        df_semi_supervised = df_labeled.loc[73585:, :].reset_index(drop=True)
-        category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
-        categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
+        else:
+            df = pd.read_csv(f'{settings.DATA_PATH}/train_processed_semi_supervised_cellpose.csv')
+            df_semi_supervised = df.loc[73585:, :].reset_index(drop=True)
+            category_ids = {'cort': 1, 'shsy5y': 2, 'astro': 3}
+            categories = [{'name': name, 'id': category_id} for name, category_id in category_ids.items()]
 
-        print(f'Writing Semi-supervised COCO Datasets')
+            print(f'Writing Semi-supervised COCO Datasets')
 
-        semi_supervised_images = [
-            {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_semi_supervised_images/{image_id}.png'}
-            for image_id, row in
-            df_semi_supervised.groupby('id').agg('first').iterrows()
-        ]
+            semi_supervised_images = [
+                {'id': image_id, 'width': row.width, 'height': row.height, 'file_name': f'train_semi_supervised_images/{image_id}.png'}
+                for image_id, row in
+                df_semi_supervised.groupby('id').agg('first').iterrows()
+            ]
 
-        semi_supervised_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_semi_supervised.iterrows(), total=len(df_semi_supervised)))
-        semi_supervised_dataset = {'categories': categories, 'images': semi_supervised_images, 'annotations': semi_supervised_annotations}
-        with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_cellpose.json', 'w', encoding='utf-8') as f:
-            json.dump(semi_supervised_dataset, f, ensure_ascii=True, indent=4)
+            semi_supervised_annotations = Parallel(n_jobs=4)(delayed(annotate)(idx, row, category_ids) for idx, row in tqdm(df_semi_supervised.iterrows(), total=len(df_semi_supervised)))
+            semi_supervised_dataset = {'categories': categories, 'images': semi_supervised_images, 'annotations': semi_supervised_annotations}
+            with open(f'{settings.DATA_PATH}/coco_datasets/semi_supervised_cellpose.json', 'w', encoding='utf-8') as f:
+                json.dump(semi_supervised_dataset, f, ensure_ascii=True, indent=4)
